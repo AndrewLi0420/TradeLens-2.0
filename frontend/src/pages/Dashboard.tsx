@@ -1,28 +1,198 @@
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
+import { useTier } from '../hooks/useTier';
+import { useRecommendations } from '../hooks/useRecommendations';
+import { getPreferences } from '../services/userPreferences';
+import { generateRecommendations } from '../services/recommendations';
+import type { UserPreferences } from '../types/user';
+import type { GetRecommendationsParams } from '../services/recommendations';
+import RecommendationList from '../components/recommendations/RecommendationList';
+import FilterSortControls from '../components/recommendations/FilterSortControls';
+import TierStatus from '../components/common/TierStatus';
+import PreferenceIndicator from '../components/common/PreferenceIndicator';
+import UpgradePrompt from '../components/common/UpgradePrompt';
+import InlineHelp, { dashboardHelpContent } from '../components/common/InlineHelp';
+import OnboardingTooltips from '../components/common/OnboardingTooltips';
+import { Button } from '../components/ui/button';
+
+const PREFERENCES_QUERY_KEY = ['preferences', 'current-user'];
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { isLimitReached, stockLimit } = useTier();
+  const [filters, setFilters] = useState<GetRecommendationsParams>({
+    sort_by: 'date',
+    sort_direction: 'desc',
+  });
+  const [generateMessage, setGenerateMessage] = useState<string | null>(null);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+
+  // Fetch user preferences to check if they're set (for UI messaging)
+  const { data: preferences } = useQuery<UserPreferences | null>({
+    queryKey: PREFERENCES_QUERY_KEY,
+    queryFn: getPreferences,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Automatically show upgrade prompt when limit is reached (once per session)
+  useEffect(() => {
+    if (isLimitReached) {
+      const hasShownThisSession = sessionStorage.getItem('upgrade-prompt-shown');
+      if (!hasShownThisSession) {
+        setShowUpgradePrompt(true);
+        sessionStorage.setItem('upgrade-prompt-shown', 'true');
+      }
+    }
+  }, [isLimitReached]);
+
+  // Fetch recommendations with current filters
+  const { data: recommendations, isLoading, isError, error, refetch } = useRecommendations(filters);
+
+  // Generate recommendations mutation
+  const generateMutation = useMutation({
+    mutationFn: () => {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+      return generateRecommendations(user.id, 10);
+    },
+    onSuccess: (data) => {
+      if (data.created > 0) {
+        setGenerateMessage(`Successfully generated ${data.created} recommendations!`);
+        // Refetch recommendations after generation
+        refetch();
+        // Clear message after 5 seconds
+        setTimeout(() => setGenerateMessage(null), 5000);
+      } else {
+        // Show diagnostic message if provided, otherwise generic message
+        const message = data.message || 'Generated 0 recommendations. Check backend logs for details.';
+        setGenerateMessage(message);
+        // Clear message after 10 seconds (longer for diagnostic info)
+        setTimeout(() => setGenerateMessage(null), 10000);
+      }
+    },
+    onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate recommendations';
+      setGenerateMessage(
+        `Error: ${errorMessage}. Check backend logs for details. Possible causes: no stocks in database, no market data, or ML models not loaded.`
+      );
+      setTimeout(() => setGenerateMessage(null), 8000);
+    },
+  });
+
+  // Handle recommendation click (navigate to detail view)
+  const handleRecommendationClick = (recommendation: any) => {
+    // Navigation is handled by RecommendationCard component
+    // This handler is kept for potential future use
+  };
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
-
-      <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
-        <h2 className="text-xl font-semibold mb-4">Welcome!</h2>
-        {user && (
-          <div className="space-y-2 text-gray-300">
-            <p>
-              <strong>Email:</strong> {user.email}
-            </p>
-            <p>
-              <strong>Tier:</strong> {user.tier}
-            </p>
-            <p>
-              <strong>Verified:</strong> {user.is_verified ? 'Yes' : 'No'}
-            </p>
-          </div>
-        )}
+      <OnboardingTooltips />
+      <UpgradePrompt
+        stockLimit={stockLimit ?? 5}
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+      />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+        <div className="flex items-center gap-2 sm:gap-4">
+          <InlineHelp
+            title="Dashboard Help"
+            content={
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold text-financial-green mb-2">Filtering & Sorting</h4>
+                  <p className="text-gray-300">{dashboardHelpContent.filtering}</p>
+                  <p className="text-gray-300 mt-2">{dashboardHelpContent.sorting}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-financial-green mb-2">Understanding Metrics</h4>
+                  <p className="text-gray-300">{dashboardHelpContent.recommendationMetrics}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-financial-green mb-2">Tier Limits</h4>
+                  <p className="text-gray-300">{dashboardHelpContent.tierLimits}</p>
+                </div>
+              </div>
+            }
+          />
+          <TierStatus />
+        </div>
       </div>
+
+      {/* Preference Indicators */}
+      {preferences && (
+        <div className="mb-4">
+          <PreferenceIndicator />
+        </div>
+      )}
+
+      {/* Message encouraging preference setup when preferences not set */}
+      {!preferences && (
+        <div className="mb-4 p-4 bg-gray-900 border border-financial-blue rounded-lg">
+          <p className="text-gray-300">
+            💡 <strong>Personalize your recommendations:</strong> Set your holding period and risk tolerance preferences in your{' '}
+            <a href="/profile" className="text-financial-blue hover:text-financial-green underline">
+              Profile
+            </a>{' '}
+            to see recommendations tailored to your investment style.
+          </p>
+        </div>
+      )}
+
+      {/* Filter and Sort Controls */}
+      <div className="mb-6">
+        <FilterSortControls filters={filters} onFiltersChange={setFilters} />
+      </div>
+
+      {/* Generate Recommendations Button */}
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1">
+          {generateMessage && (
+            <div
+              className={`text-sm ${
+                generateMessage.includes('Successfully')
+                  ? 'text-financial-green'
+                  : 'text-red-400'
+              }`}
+            >
+              {generateMessage}
+            </div>
+          )}
+        </div>
+        <Button
+          onClick={() => generateMutation.mutate()}
+          disabled={generateMutation.isPending || !user?.id}
+          className="bg-financial-blue hover:bg-financial-blue/80 text-white w-full sm:w-auto min-h-[44px]"
+        >
+          {generateMutation.isPending ? 'Generating...' : 'Generate Recommendations'}
+        </Button>
+      </div>
+
+      {/* Recommendations List */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-gray-400">Loading recommendations...</div>
+        </div>
+      )}
+
+      {isError && (
+        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 mb-6">
+          <p className="text-red-400">
+            {error instanceof Error ? error.message : 'Failed to load recommendations'}
+          </p>
+        </div>
+      )}
+
+      {!isLoading && !isError && (
+        <RecommendationList
+          recommendations={recommendations ?? []}
+          onRecommendationClick={handleRecommendationClick}
+        />
+      )}
     </div>
   );
 }

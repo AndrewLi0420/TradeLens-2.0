@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import numpy as np
 import pandas as pd
@@ -16,9 +17,16 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.crud.market_data import get_market_data_history
 from app.crud.sentiment_data import get_sentiment_data_history
 from app.crud.stocks import get_all_stocks
+from app.services.ml_exceptions import (
+    FeatureEngineeringError,
+    InferenceError,
+    InvalidInputError,
+    ModelNotLoadedError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,15 +47,31 @@ async def load_training_data(
     Returns:
         Tuple of (market_data_list, sentiment_data_list) where each list contains
         dict records with stock_id, timestamp, and relevant fields
+    
+    Raises:
+        InvalidInputError: If date range is invalid
     """
+    # Input validation
+    if not isinstance(start_date, datetime):
+        raise InvalidInputError(f"start_date must be datetime, got {type(start_date)}")
+    if not isinstance(end_date, datetime):
+        raise InvalidInputError(f"end_date must be datetime, got {type(end_date)}")
+    if start_date >= end_date:
+        raise InvalidInputError(f"start_date must be before end_date, got start_date={start_date}, end_date={end_date}")
+    
     logger.info(
         "Loading training data from %s to %s",
         start_date.isoformat(),
         end_date.isoformat(),
     )
     
-    # Get all stocks
-    stocks = await get_all_stocks(session)
+    # Get all stocks (respect configured universe if provided)
+    from app.core.config import settings
+    if getattr(settings, "STOCK_UNIVERSE", None):
+        from app.crud.stocks import get_stocks_by_symbols
+        stocks = await get_stocks_by_symbols(session, settings.STOCK_UNIVERSE)
+    else:
+        stocks = await get_all_stocks(session)
     if not stocks:
         logger.warning("No stocks found in database")
         return [], []
@@ -277,17 +301,27 @@ def prepare_feature_vectors(
 class NeuralNetworkModel(nn.Module):
     """Neural network model for stock recommendation (buy/sell/hold classification)."""
     
-    def __init__(self, input_size: int, hidden_size1: int = 128, hidden_size2: int = 64, num_classes: int = 3):
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size1: int | None = None,
+        hidden_size2: int | None = None,
+        num_classes: int = 3,
+    ):
         """
         Initialize neural network model.
         
         Args:
             input_size: Number of input features
-            hidden_size1: Size of first hidden layer (default: 128)
-            hidden_size2: Size of second hidden layer (default: 64)
+            hidden_size1: Size of first hidden layer (defaults to ML_NEURAL_NETWORK_HIDDEN_SIZE1 from config)
+            hidden_size2: Size of second hidden layer (defaults to ML_NEURAL_NETWORK_HIDDEN_SIZE2 from config)
             num_classes: Number of output classes (default: 3 for buy/sell/hold)
         """
         super(NeuralNetworkModel, self).__init__()
+        if hidden_size1 is None:
+            hidden_size1 = settings.ML_NEURAL_NETWORK_HIDDEN_SIZE1
+        if hidden_size2 is None:
+            hidden_size2 = settings.ML_NEURAL_NETWORK_HIDDEN_SIZE2
         self.fc1 = nn.Linear(input_size, hidden_size1)
         self.fc2 = nn.Linear(hidden_size1, hidden_size2)
         self.fc3 = nn.Linear(hidden_size2, num_classes)
@@ -573,22 +607,30 @@ def get_latest_model_version(model_type: str, base_path: str | Path | None = Non
 
 def _generate_labels(
     market_data: list[dict[str, Any]],
-    future_days: int = 7,
-    buy_threshold: float = 0.05,
-    sell_threshold: float = -0.05,
+    future_days: int | None = None,
+    buy_threshold: float | None = None,
+    sell_threshold: float | None = None,
 ) -> np.ndarray:
     """
     Generate buy/sell/hold labels based on future price movement.
     
     Args:
         market_data: List of market data dicts with stock_id, timestamp, price
-        future_days: Number of days ahead to look for price movement
-        buy_threshold: Price increase threshold for "buy" label (default: 5%)
-        sell_threshold: Price decrease threshold for "sell" label (default: -5%)
+        future_days: Number of days ahead to look for price movement (defaults to ML_LABEL_FUTURE_DAYS from config)
+        buy_threshold: Price increase threshold for "buy" label (defaults to ML_BUY_THRESHOLD from config)
+        sell_threshold: Price decrease threshold for "sell" label (defaults to ML_SELL_THRESHOLD from config)
     
     Returns:
         numpy array of labels (0=hold, 1=buy, 2=sell)
     """
+    # Use config defaults if not provided
+    if future_days is None:
+        future_days = settings.ML_LABEL_FUTURE_DAYS
+    if buy_threshold is None:
+        buy_threshold = settings.ML_BUY_THRESHOLD
+    if sell_threshold is None:
+        sell_threshold = settings.ML_SELL_THRESHOLD
+    
     # Convert to DataFrame for easier manipulation
     df = pd.DataFrame(market_data)
     df = df.sort_values(["stock_id", "timestamp"])
@@ -629,7 +671,7 @@ async def train_models(
     end_date: datetime,
     version: str | None = None,
     train_neural_network: bool = True,
-    train_random_forest: bool = True,
+    train_random_forest_model: bool = True,
 ) -> dict[str, Any]:
     """
     Train ML models on historical data.
@@ -719,8 +761,8 @@ async def train_models(
             optimizer = optim.Adam(model_nn.parameters(), lr=0.001)
             
             # Training loop
-            epochs = 50
-            batch_size = 32
+            epochs = settings.ML_TRAINING_EPOCHS
+            batch_size = settings.ML_TRAINING_BATCH_SIZE
             model_nn.train()
             
             X_train_tensor = torch.FloatTensor(X_train)
@@ -748,8 +790,9 @@ async def train_models(
             }
         
         # 6. Train Random Forest model
-        if train_random_forest:
+        if train_random_forest_model:
             logger.info("Training Random Forest model...")
+            # Call the training function (avoid shadowing by using explicit name)
             model_rf = train_random_forest(X_train, y_train)
             
             # Evaluate
@@ -828,6 +871,17 @@ def initialize_models(base_path: str | Path | None = None) -> dict[str, Any]:
     return results
 
 
+def are_models_loaded() -> bool:
+    """
+    Check if at least one ML model is loaded and available for inference.
+    
+    Returns:
+        True if at least one model (neural network or random forest) is loaded, False otherwise
+    """
+    global _neural_network_model, _random_forest_model
+    return _neural_network_model is not None or _random_forest_model is not None
+
+
 def _infer_neural_network(feature_vector: np.ndarray) -> tuple[int, np.ndarray]:
     """
     Run inference with neural network model.
@@ -839,11 +893,21 @@ def _infer_neural_network(feature_vector: np.ndarray) -> tuple[int, np.ndarray]:
         Tuple of (predicted_class, probabilities) where:
         - predicted_class: 0=hold, 1=buy, 2=sell
         - probabilities: array of probabilities for each class
+    
+    Raises:
+        ModelNotLoadedError: If model is not loaded
+        InvalidInputError: If feature vector is invalid
     """
     global _neural_network_model
     
+    # Input validation
+    if not isinstance(feature_vector, np.ndarray):
+        raise InvalidInputError(f"feature_vector must be numpy array, got {type(feature_vector)}")
+    if feature_vector.shape != (9,):
+        raise InvalidInputError(f"feature_vector must have shape (9,), got {feature_vector.shape}")
+    
     if _neural_network_model is None:
-        raise RuntimeError("Neural network model not loaded. Call initialize_models() at startup.")
+        raise ModelNotLoadedError("Neural network model not loaded. Call initialize_models() at startup.")
     
     _neural_network_model.eval()
     with torch.no_grad():
@@ -866,11 +930,21 @@ def _infer_random_forest(feature_vector: np.ndarray) -> tuple[int, np.ndarray]:
         Tuple of (predicted_class, probabilities) where:
         - predicted_class: 0=hold, 1=buy, 2=sell
         - probabilities: array of probabilities for each class
+    
+    Raises:
+        ModelNotLoadedError: If model is not loaded
+        InvalidInputError: If feature vector is invalid
     """
     global _random_forest_model
     
+    # Input validation
+    if not isinstance(feature_vector, np.ndarray):
+        raise InvalidInputError(f"feature_vector must be numpy array, got {type(feature_vector)}")
+    if feature_vector.shape != (9,):
+        raise InvalidInputError(f"feature_vector must have shape (9,), got {feature_vector.shape}")
+    
     if _random_forest_model is None:
-        raise RuntimeError("Random Forest model not loaded. Call initialize_models() at startup.")
+        raise ModelNotLoadedError("Random Forest model not loaded. Call initialize_models() at startup.")
     
     # Reshape for scikit-learn (expects 2D array)
     feature_vector_2d = feature_vector.reshape(1, -1)
@@ -977,32 +1051,48 @@ async def predict_stock(
     start_time = time.time()
     
     try:
+        # Input validation
+        if not isinstance(stock_id, UUID):
+            raise InvalidInputError(f"stock_id must be UUID, got {type(stock_id)}")
+        
         # 1. Load market data and sentiment (if not provided)
         if market_data is None:
             market_record = await get_latest_market_data(session, stock_id)
             if market_record is None:
-                raise ValueError(f"No market data found for stock {stock_id}")
+                raise InvalidInputError(f"No market data found for stock {stock_id}")
             market_data = {
                 "price": float(market_record.price),
                 "volume": int(market_record.volume),
                 "timestamp": market_record.timestamp,
             }
+        else:
+            # Validate provided market_data
+            if not isinstance(market_data, dict):
+                raise InvalidInputError(f"market_data must be dict, got {type(market_data)}")
+            if "price" not in market_data or "volume" not in market_data:
+                raise InvalidInputError("market_data must contain 'price' and 'volume' keys")
+            if not isinstance(market_data["price"], (int, float)) or market_data["price"] <= 0:
+                raise InvalidInputError(f"market_data['price'] must be positive number, got {market_data.get('price')}")
+            if not isinstance(market_data["volume"], (int, float)) or market_data["volume"] < 0:
+                raise InvalidInputError(f"market_data['volume'] must be non-negative number, got {market_data.get('volume')}")
         
         if sentiment_score is None:
             sentiment_score = await get_aggregated_sentiment(session, stock_id)
             if sentiment_score is None:
                 logger.warning("No sentiment data found for stock %s, using neutral sentiment", stock_id)
                 sentiment_score = 0.0
+        else:
+            # Validate sentiment_score
+            if not isinstance(sentiment_score, (int, float)):
+                raise InvalidInputError(f"sentiment_score must be number, got {type(sentiment_score)}")
+            if not -1.0 <= sentiment_score <= 1.0:
+                raise InvalidInputError(f"sentiment_score must be in [-1, 1], got {sentiment_score}")
         
         # 2. Prepare feature vector
-        # Need to create market_data and sentiment_data lists for prepare_feature_vectors()
-        # For inference, we need historical data for rolling features, so we'll need to
-        # load recent history or use a simplified feature vector
-        # For now, let's load recent history for proper feature engineering
-        from datetime import timedelta
-        
+        # Load minimal history needed for rolling features (optimized from 180 to 14 days)
         end_date = datetime.now(timezone.utc)
-        start_date = end_date - timedelta(days=30)  # Get 30 days of history
+        # Use configurable window - reduced from 180 days for performance
+        start_date = end_date - timedelta(days=settings.ML_INFERENCE_HISTORY_DAYS)
         
         from app.crud.market_data import get_market_data_history
         from app.crud.sentiment_data import get_sentiment_data_history
@@ -1059,7 +1149,7 @@ async def predict_stock(
         feature_matrix, _ = prepare_feature_vectors(market_data_list, sentiment_data_list)
         
         if len(feature_matrix) == 0:
-            raise ValueError("Failed to create feature vector for inference")
+            raise FeatureEngineeringError("Failed to create feature vector for inference")
         
         # Use the most recent feature vector (last row)
         feature_vector = feature_matrix[-1]
@@ -1067,7 +1157,7 @@ async def predict_stock(
         # Validate feature vector dimensions
         expected_features = 9
         if len(feature_vector) != expected_features:
-            raise ValueError(
+            raise FeatureEngineeringError(
                 f"Feature vector dimension mismatch: expected {expected_features}, got {len(feature_vector)}"
             )
         
@@ -1078,7 +1168,7 @@ async def predict_stock(
         rf_available = _random_forest_model is not None
         
         if not nn_available and not rf_available:
-            raise RuntimeError("No models loaded. Call initialize_models() at startup.")
+            raise ModelNotLoadedError("No models loaded. Call initialize_models() at startup.")
         
         # Neural network inference
         if nn_available:
@@ -1099,7 +1189,7 @@ async def predict_stock(
             except Exception as e:
                 logger.error("Neural network inference failed: %s", e, exc_info=True)
                 if not rf_available:
-                    raise  # If RF also unavailable, fail
+                    raise InferenceError(f"Neural network inference failed and Random Forest unavailable: {e}") from e
                 nn_available = False  # Mark as unavailable for ensemble
         
         # Random Forest inference
@@ -1121,31 +1211,40 @@ async def predict_stock(
             except Exception as e:
                 logger.error("Random Forest inference failed: %s", e, exc_info=True)
                 if not nn_available:
-                    raise  # If NN also unavailable, fail
+                    raise InferenceError(f"Random Forest inference failed and Neural Network unavailable: {e}") from e
                 rf_available = False  # Mark as unavailable for ensemble
         
         # 4. Combine model outputs (ensemble or use single model)
         if use_ensemble and nn_available and rf_available:
-            # Ensemble: majority vote for signal, weighted average for confidence
-            signals = [nn_prediction["signal"], rf_prediction["signal"]]
-            signal_counts = {"buy": 0, "sell": 0, "hold": 0}
-            for sig in signals:
-                signal_counts[sig] += 1
+            # Ensemble: weighted voting based on confidence scores and probabilities
+            # This avoids arbitrary tie-breaking in simple majority vote
             
-            # Majority vote
-            ensemble_signal = max(signal_counts, key=signal_counts.get)
+            # Get prediction probabilities for each class
+            nn_probs = np.array(nn_prediction["probabilities"])
+            rf_probs = np.array(rf_prediction["probabilities"])
             
-            # Weighted average confidence (weight by prediction probability)
-            nn_weight = float(np.max(nn_prediction["probabilities"]))
-            rf_weight = float(np.max(rf_prediction["probabilities"]))
+            # Weight each model by its confidence score and max probability
+            nn_weight = nn_prediction["confidence_score"] * float(np.max(nn_probs))
+            rf_weight = rf_prediction["confidence_score"] * float(np.max(rf_probs))
             total_weight = nn_weight + rf_weight
             
             if total_weight > 0:
+                # Weighted average of probabilities
+                combined_probs = (nn_probs * nn_weight + rf_probs * rf_weight) / total_weight
+                # Get class with highest combined probability
+                ensemble_class = int(np.argmax(combined_probs))
+                ensemble_signal = _class_to_signal(ensemble_class)
+                
+                # Weighted average confidence
                 ensemble_confidence = (
                     nn_prediction["confidence_score"] * nn_weight +
                     rf_prediction["confidence_score"] * rf_weight
                 ) / total_weight
             else:
+                # Fallback: use simple average if weights are zero
+                combined_probs = (nn_probs + rf_probs) / 2
+                ensemble_class = int(np.argmax(combined_probs))
+                ensemble_signal = _class_to_signal(ensemble_class)
                 ensemble_confidence = (
                     nn_prediction["confidence_score"] + rf_prediction["confidence_score"]
                 ) / 2
@@ -1164,7 +1263,7 @@ async def predict_stock(
             final_confidence = rf_prediction["confidence_score"]
             model_used = "random_forest"
         else:
-            raise RuntimeError("No models available for inference")
+            raise ModelNotLoadedError("No models available for inference")
         
         # Calculate latency
         latency_ms = (time.time() - start_time) * 1000

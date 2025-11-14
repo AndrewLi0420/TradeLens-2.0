@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.models.enums import SignalEnum, RiskLevelEnum
+from app.schemas.stock import StockRead
 
 
 class RecommendationBase(BaseModel):
@@ -34,7 +35,9 @@ class RecommendationUpdate(BaseModel):
 class RecommendationRead(RecommendationBase):
     """Schema for reading recommendation"""
     id: UUID
+    sentiment_score: float | None = None  # Aggregated sentiment score
     created_at: datetime
+    stock: StockRead  # Include stock information
 
     class Config:
         from_attributes = True

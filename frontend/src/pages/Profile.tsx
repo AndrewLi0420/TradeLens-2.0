@@ -4,14 +4,20 @@ import { useAuth } from '../hooks/useAuth';
 import { useTier } from '../hooks/useTier';
 import { getPreferences, updatePreferences } from '../services/userPreferences';
 import type { UserPreferences, UserPreferencesUpdate } from '../types/user';
+import TierStatus from '../components/common/TierStatus';
+import UpgradePrompt from '../components/common/UpgradePrompt';
+import { DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const PREFERENCES_QUERY_KEY = ['preferences', 'current-user'];
+const RECOMMENDATIONS_QUERY_KEY = ['recommendations', 'current-user'];
 
 export default function Profile() {
   const { user } = useAuth();
-  const { tier, stockCount, stockLimit, canAddMore, isPremium, isLoading: tierLoading } = useTier();
+  const { stockCount, stockLimit, isPremium, isLimitReached } = useTier();
   const queryClient = useQueryClient();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   // Fetch preferences
   const {
@@ -38,19 +44,32 @@ export default function Profile() {
     }
   }, [preferences]);
 
+  // Automatically show upgrade prompt when limit is reached (once per session)
+  useEffect(() => {
+    if (isLimitReached) {
+      const hasShownThisSession = sessionStorage.getItem('upgrade-prompt-shown');
+      if (!hasShownThisSession) {
+        setShowUpgradePrompt(true);
+        sessionStorage.setItem('upgrade-prompt-shown', 'true');
+      }
+    }
+  }, [isLimitReached]);
+
   // Update preferences mutation
   const updateMutation = useMutation({
     mutationFn: (prefs: UserPreferencesUpdate) => updatePreferences(prefs),
     onSuccess: (updatedPrefs) => {
       // Update React Query cache
       queryClient.setQueryData(PREFERENCES_QUERY_KEY, updatedPrefs);
+      // Invalidate recommendations query to trigger refetch with new preferences
+      queryClient.invalidateQueries({ queryKey: RECOMMENDATIONS_QUERY_KEY });
       // Update local state
       setHoldingPeriod(updatedPrefs.holding_period);
       setRiskTolerance(updatedPrefs.risk_tolerance);
       // Show success message
-      setSuccessMessage('Preferences saved successfully!');
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setSuccessMessage('Preferences saved successfully! Recommendations will update automatically.');
+      // Clear success message after 5 seconds (longer to show the refetch message)
+      setTimeout(() => setSuccessMessage(null), 5000);
     },
     onError: (error: any) => {
       console.error('Failed to update preferences:', error);
@@ -80,29 +99,45 @@ export default function Profile() {
 
   return (
     <div>
+      <UpgradePrompt
+        stockLimit={stockLimit ?? 5}
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+      />
       <h1 className="text-3xl font-bold mb-8">Profile</h1>
 
       {/* User Info Section */}
       <div className="bg-gray-900 rounded-lg p-6 border border-gray-800 mb-6">
           <h2 className="text-xl font-semibold mb-4">Account Information</h2>
           {user && (
-            <div className="space-y-2 text-gray-300">
+            <div className="space-y-4 text-gray-300">
               <p>
                 <strong>Email:</strong> {user.email}
               </p>
-              <p>
-                <strong>Tier:</strong>{' '}
-                <span className={`inline-block px-2 py-1 rounded text-sm font-medium ${
-                  isPremium 
-                    ? 'bg-green-900 text-green-300' 
-                    : 'bg-blue-900 text-blue-300'
-                }`}>
-                  {isPremium ? 'Premium - Unlimited' : `Free Tier - Tracking ${stockCount}/${stockLimit ?? 5} stocks`}
-                </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                <strong>Tier:</strong>
+                <TierStatus />
                 {isPremium && (
-                  <span className="ml-2 text-green-400">✨</span>
+                  <span className="text-green-400">✨</span>
                 )}
-              </p>
+              </div>
+              {!isPremium && (
+                <div className="pt-2">
+                  <UpgradePrompt
+                    stockLimit={stockLimit ?? 5}
+                    trigger={
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="border-financial-blue text-financial-blue hover:bg-financial-blue/10"
+                        >
+                          Upgrade to Premium
+                        </Button>
+                      </DialogTrigger>
+                    }
+                  />
+                </div>
+              )}
               <p>
                 <strong>Verified:</strong> {user.is_verified ? 'Yes' : 'No'}
               </p>

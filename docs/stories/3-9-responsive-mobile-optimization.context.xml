@@ -1,0 +1,171 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>9</storyId>
+    <title>Responsive Mobile Optimization</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-11</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/3-9-responsive-mobile-optimization.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>mobile user</asA>
+    <iWant>the dashboard and recommendation views to work well on mobile devices</iWant>
+    <soThat>I can check recommendations on the go</soThat>
+    <tasks>
+      <task>Audit current responsive design implementation (AC: 1, 2, 3, 4, 5)</task>
+      <task>Optimize Dashboard for mobile (AC: 1, 2)</task>
+      <task>Optimize RecommendationList for mobile (AC: 2, 6)</task>
+      <task>Optimize RecommendationDetail for mobile (AC: 3, 6)</task>
+      <task>Implement mobile navigation (AC: 4)</task>
+      <task>Optimize Search for mobile (AC: 5, 6)</task>
+      <task>Optimize touch interactions (AC: 6)</task>
+      <task>Optimize typography for mobile (AC: 7)</task>
+      <task>Testing</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">Dashboard responsive on mobile screens (375px, 414px widths)</criterion>
+    <criterion id="AC2">List view optimized for mobile (touch-friendly, readable)</criterion>
+    <criterion id="AC3">Detail view works well on mobile (modal or full page)</criterion>
+    <criterion id="AC4">Navigation accessible on mobile (hamburger menu or bottom nav)</criterion>
+    <criterion id="AC5">Search functionality works on mobile</criterion>
+    <criterion id="AC6">Touch interactions optimized (tap targets large enough)</criterion>
+    <criterion id="AC7">Text readable without zooming</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="FR026: Web-first responsive interface, User Journey 1: Mobile access scenario">
+        <snippet>Web-first responsive design (desktop and mobile). Mobile access scenario: Sarah checks recommendations on phone while commuting. Technical UI constraints include responsive design and browser compatibility.</snippet>
+      </doc>
+      <doc path="dist/ux-design-specification.md" title="UX Design Specification" section="8. Responsive Design &amp; Accessibility">
+        <snippet>Mobile breakpoints: &lt;768px with single column layout, bottom navigation or hamburger menu drawer, 1-column portfolio grid, minimum 44px × 44px touch targets. Desktop: ≥1024px with full two-column sidebar layout.</snippet>
+      </doc>
+      <doc path="dist/architecture.md" title="Architecture Document" section="Design Constraints">
+        <snippet>Technical UI constraints: Responsive design, browser compatibility, accessibility. Frontend uses React + TypeScript with Tailwind CSS for styling. Components organized in components/, pages/, hooks/ directories.</snippet>
+      </doc>
+      <doc path="docs/stories/1-7-responsive-ui-foundation-with-tailwind-css.md" title="Story 1.7: Responsive UI Foundation" section="Implementation">
+        <snippet>Responsive design foundation established: Tailwind CSS configured with responsive utilities, black background with financial blue/green accents applied. Mobile breakpoints: 375px, 414px. Desktop breakpoints: 1280px, 1920px.</snippet>
+      </doc>
+      <doc path="docs/stories/3-1-recommendation-dashboard-list-view.md" title="Story 3.1: Dashboard List View" section="Implementation">
+        <snippet>Dashboard list view implementation with RecommendationList component, FilterSortControls, React Query patterns with 5min staleTime, 10min cacheTime.</snippet>
+      </doc>
+      <doc path="docs/stories/3-2-recommendation-detail-view.md" title="Story 3.2: Recommendation Detail View" section="Implementation">
+        <snippet>Recommendation detail view implementation with RecommendationDetailContent component, full-page navigation approach, educational tooltips integration.</snippet>
+      </doc>
+      <doc path="docs/stories/3-3-stock-search-functionality.md" title="Story 3.3: Stock Search Functionality" section="Implementation">
+        <snippet>Search functionality implementation with Search page, StockSearchResults component, useStockSearch hook, search input with minimum 2 characters.</snippet>
+      </doc>
+      <doc path="docs/stories/3-8-user-preference-integration-with-recommendations.md" title="Story 3.8: User Preference Integration" section="Dev Agent Record">
+        <snippet>shadcn/ui components available: Badge, Dialog, Select, Popover. Component organization: common components in frontend/src/components/common/. Styling consistency: black background with financial blue/green accents. React Query patterns: 5min staleTime, 10min cacheTime. Testing patterns: comprehensive unit and integration tests.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact path="frontend/src/pages/Dashboard.tsx" kind="page component" symbol="Dashboard" lines="1-200" reason="Main dashboard page requiring mobile optimization for layout, filter/sort controls, and recommendation list display">
+        <note>Uses flex layout for header, FilterSortControls component, RecommendationList component. No mobile-specific responsive classes currently applied to main layout.</note>
+      </artifact>
+      <artifact path="frontend/src/components/recommendations/RecommendationList.tsx" kind="component" symbol="RecommendationList" lines="1-39" reason="List view component that needs mobile optimization for single-column stacking and touch-friendly cards">
+        <note>Currently uses grid-cols-1 md:grid-cols-2 lg:grid-cols-3. Needs mobile-first approach with single column on mobile, larger touch targets.</note>
+      </artifact>
+      <artifact path="frontend/src/pages/RecommendationDetail.tsx" kind="page component" symbol="RecommendationDetail" lines="1-127" reason="Detail view page requiring mobile optimization, potentially modal approach for mobile">
+        <note>Currently full-page navigation. Consider Dialog component for mobile modal approach while maintaining full-page for desktop.</note>
+      </artifact>
+      <artifact path="frontend/src/components/common/Navigation.tsx" kind="component" symbol="Navigation" lines="1-53" reason="Navigation component requiring mobile hamburger menu or bottom navigation implementation">
+        <note>Currently uses flex-col md:flex-row. Header component has basic mobile menu but needs shadcn/ui Sheet/Drawer component for proper mobile navigation.</note>
+      </artifact>
+      <artifact path="frontend/src/components/common/Header.tsx" kind="component" symbol="Header" lines="8-146" reason="Header component with existing mobile menu that needs enhancement with shadcn/ui Sheet component">
+        <note>Has basic mobile menu toggle but should use shadcn/ui Sheet component for better mobile UX. Search functionality integrated in mobile menu.</note>
+      </artifact>
+      <artifact path="frontend/src/pages/Search.tsx" kind="page component" symbol="Search" lines="1-102" reason="Search page requiring mobile optimization for search input and results display">
+        <note>Search input and results need mobile optimization: full-width input, touch-friendly results, proper keyboard handling.</note>
+      </artifact>
+      <artifact path="frontend/src/components/recommendations/FilterSortControls.tsx" kind="component" symbol="FilterSortControls" reason="Filter and sort controls requiring mobile optimization for vertical stacking and larger touch targets">
+        <note>Needs mobile optimization: stack vertically on mobile, larger touch targets (44x44px minimum), accessible on mobile.</note>
+      </artifact>
+      <artifact path="frontend/src/components/common/TierStatus.tsx" kind="component" symbol="TierStatus" reason="TierStatus component that should remain mobile-friendly">
+        <note>Already uses Badge component, should verify mobile display and touch targets.</note>
+      </artifact>
+      <artifact path="frontend/src/components/common/PreferenceIndicator.tsx" kind="component" symbol="PreferenceIndicator" reason="PreferenceIndicator component that should remain mobile-friendly">
+        <note>Already uses Badge components, should verify mobile display and spacing.</note>
+      </artifact>
+      <artifact path="frontend/src/components/common/EducationalTooltip.tsx" kind="component" symbol="InfoTooltip" reason="Tooltip component requiring mobile click/tap support instead of hover-only">
+        <note>Should use shadcn/ui Popover component which supports both hover (desktop) and click/tap (mobile) interactions.</note>
+      </artifact>
+      <artifact path="frontend/tailwind.config.js" kind="configuration" symbol="tailwindConfig" lines="1-33" reason="Tailwind configuration with responsive breakpoints and financial color scheme">
+        <note>Tailwind configured with default breakpoints (sm, md, lg, xl, 2xl). Financial blue/green color scheme defined. Responsive utilities available for mobile optimization.</note>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="react-router-dom" version="^6.30.1" />
+        <package name="@tanstack/react-query" version="^5.90.6" />
+        <package name="tailwindcss" version="^4.1.16" />
+        <package name="@radix-ui/react-dialog" version="^1.1.15" />
+        <package name="@radix-ui/react-popover" version="^1.1.15" />
+        <package name="@radix-ui/react-select" version="^2.2.6" />
+        <package name="lucide-react" version="^0.552.0" />
+        <package name="axios" version="^1.13.1" />
+      </ecosystem>
+      <ecosystem name="testing">
+        <package name="vitest" version="^3.2.4" />
+        <package name="@testing-library/react" version="^16.3.0" />
+        <package name="@playwright/test" version="^1.56.1" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <interfaces>
+    <interface name="Navigation Component API" kind="React component interface" signature="Navigation({ className?: string, onLinkClick?: () => void })" path="frontend/src/components/common/Navigation.tsx" />
+    <interface name="Header Component API" kind="React component interface" signature="Header({ className?: string })" path="frontend/src/components/common/Header.tsx" />
+    <interface name="Dashboard Page" kind="React page component" signature="Dashboard()" path="frontend/src/pages/Dashboard.tsx" />
+    <interface name="RecommendationList Component API" kind="React component interface" signature="RecommendationList({ recommendations: Recommendation[], onRecommendationClick?: (recommendation: Recommendation) => void })" path="frontend/src/components/recommendations/RecommendationList.tsx" />
+    <interface name="RecommendationDetail Page" kind="React page component" signature="RecommendationDetail()" path="frontend/src/pages/RecommendationDetail.tsx" />
+    <interface name="Search Page" kind="React page component" signature="Search()" path="frontend/src/pages/Search.tsx" />
+    <interface name="shadcn/ui Sheet Component" kind="shadcn/ui component" signature="Sheet, SheetTrigger, SheetContent, SheetClose" path="frontend/src/components/ui/sheet.tsx" />
+    <interface name="shadcn/ui Dialog Component" kind="shadcn/ui component" signature="Dialog, DialogTrigger, DialogContent" path="frontend/src/components/ui/dialog.tsx" />
+    <interface name="shadcn/ui Popover Component" kind="shadcn/ui component" signature="Popover, PopoverTrigger, PopoverContent" path="frontend/src/components/ui/popover.tsx" />
+  </interfaces>
+
+  <constraints>
+    <constraint>Mobile breakpoints: 375px (iPhone SE), 414px (iPhone 11 Pro Max). Desktop breakpoints: 1280px, 1920px. Use Tailwind responsive utilities (sm:, md:, lg:) for breakpoint-specific styling.</constraint>
+    <constraint>Touch target requirements per WCAG: Minimum 44x44px for interactive elements (buttons, links, form controls). Ensure spacing between touch targets to prevent accidental taps.</constraint>
+    <constraint>Font size considerations: iOS Safari zooms in on input focus if font size &lt; 16px. Ensure all input fields have minimum 16px font size to prevent unwanted zoom.</constraint>
+    <constraint>Tooltip behavior on mobile: Desktop uses hover, mobile uses click/tap. shadcn/ui Popover component supports both interactions. Ensure tooltips are accessible on mobile (not hover-only).</constraint>
+    <constraint>Mobile navigation patterns: Hamburger menu (Sheet/Drawer) for top navigation, or bottom navigation bar for quick access. Dashboard is primary view, should be easily accessible on mobile.</constraint>
+    <constraint>Mobile detail view approach: Modal (Dialog) vs full-page navigation. Modal provides better mobile UX (overlay, easy to dismiss), but full-page provides more space for content. Consider using Dialog for mobile, full-page for desktop.</constraint>
+    <constraint>Responsive design foundation already established in Story 1.7: Tailwind CSS configured with responsive utilities, black background with financial blue/green accents applied. Story 3.9 builds on this foundation.</constraint>
+    <constraint>React Query patterns from Story 3.1-3.8: Mobile optimization doesn't change data fetching patterns, but may affect loading states and error handling display on smaller screens.</constraint>
+    <constraint>Component organization: Prefer responsive Tailwind classes over separate mobile components when possible. Mobile-specific components only if absolutely necessary (e.g., RecommendationCardMobile.tsx).</constraint>
+    <constraint>Styling consistency: Maintain black background with financial blue/green accents in mobile responsive design. Ensure contrast on mobile meets WCAG AA requirements.</constraint>
+    <constraint>shadcn/ui components support responsive design: Sheet/Drawer component for mobile navigation, Dialog component for mobile modals. Components are accessible and touch-friendly by default.</constraint>
+  </constraints>
+
+  <tests>
+    <standards>Testing uses Vitest for unit tests, @testing-library/react for component tests, and Playwright for E2E tests. Unit tests should verify component rendering on mobile breakpoints using viewport mocking. Integration tests should verify dashboard workflow on mobile viewport. E2E tests should verify user navigation and interactions on mobile devices. Test patterns established in Story 3.8: comprehensive unit tests and integration tests with viewport-specific testing.</standards>
+    <locations>
+      <location>frontend/src/**/__tests__/*.test.tsx - Unit tests for components</location>
+      <location>frontend/tests/e2e/*.spec.ts - E2E tests using Playwright</location>
+      <location>frontend/vitest.config.ts - Vitest configuration</location>
+      <location>frontend/playwright.config.ts - Playwright configuration</location>
+    </locations>
+    <ideas>
+      <test ac="AC1">Unit test: Dashboard renders correctly on mobile breakpoints (375px, 414px) - verify layout stacks vertically, filter controls stack, text is readable</test>
+      <test ac="AC2">Unit test: RecommendationList stacks vertically on mobile - verify grid-cols-1 on mobile, cards are touch-friendly</test>
+      <test ac="AC3">Unit test: RecommendationDetail works as modal on mobile - verify Dialog component used on mobile, full-page on desktop</test>
+      <test ac="AC4">Unit test: Navigation hamburger menu works on mobile - verify Sheet component opens/closes, navigation links accessible</test>
+      <test ac="AC5">Integration test: Search functionality on mobile viewport - verify search input full-width, results touch-friendly, keyboard works</test>
+      <test ac="AC6">Unit test: Touch targets meet 44x44px minimum - verify all buttons, links, form controls meet WCAG requirements</test>
+      <test ac="AC7">Unit test: Typography readable on mobile - verify minimum 16px font size for inputs, appropriate line height, text contrast</test>
+      <test ac="AC1,AC2">Integration test: Dashboard workflow on mobile viewport - verify user can view recommendations, filter, navigate to detail</test>
+      <test ac="AC3">E2E test: User views recommendation detail on mobile device - verify modal opens, content readable, back navigation works</test>
+      <test ac="AC5">E2E test: User searches for stocks on mobile device - verify search input accessible, results display correctly, selection works</test>
+      <test ac="AC4">E2E test: User navigates dashboard on mobile device - verify hamburger menu accessible, navigation links work, mobile menu closes on selection</test>
+    </ideas>
+  </tests>
+</story-context>
+

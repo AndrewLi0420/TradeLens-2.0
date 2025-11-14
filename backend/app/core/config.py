@@ -71,18 +71,47 @@ class Settings(BaseSettings):
     DEFAULT_FROM_EMAIL: EmailStr
     DEFAULT_FROM_NAME: str | None = None
     EMAILS_ENABLED: bool = False
-    
-    # Financial API Configuration
-    ALPHA_VANTAGE_API_KEY: str | None = None
 
     FIRST_SUPERUSER_EMAIL: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
     # Scraping configuration
-    SCRAPE_USER_AGENT: str = "OpenAlpha-Bot/1.0"
+    SCRAPE_USER_AGENT: str = "TradeLens-Bot/1.0"
     SCRAPE_MIN_DELAY_SECONDS: float = 2.0
+    
+    # Universe filter: optional comma-separated list of stock symbols to restrict scope
+    STOCK_UNIVERSE: list[str] = []
+    
+    @field_validator("STOCK_UNIVERSE", mode="before")
+    @classmethod
+    def assemble_stock_universe(cls, v: str | list[str] | None) -> list[str]:
+        if v is None:
+            return []
+        if isinstance(v, str):
+            # Accept comma or whitespace separated
+            parts = [p.strip() for p in v.replace("\n", ",").replace(" ", ",").split(",") if p.strip()]
+            return parts
+        if isinstance(v, list):
+            return v
+        raise ValueError(v)
+    
+    # ML Model Configuration
+    # Label generation parameters
+    ML_LABEL_FUTURE_DAYS: int = 7
+    ML_BUY_THRESHOLD: float = 0.05  # 5% price increase
+    ML_SELL_THRESHOLD: float = -0.05  # 5% price decrease
+    
+    # Training hyperparameters
+    ML_TRAINING_EPOCHS: int = 50
+    ML_TRAINING_BATCH_SIZE: int = 32
+    ML_NEURAL_NETWORK_HIDDEN_SIZE1: int = 128
+    ML_NEURAL_NETWORK_HIDDEN_SIZE2: int = 64
+    
+    # Inference configuration
+    ML_INFERENCE_HISTORY_DAYS: int = 14  # Reduced from 180 for performance
+    ML_INFERENCE_MIN_HISTORY_DAYS: int = 7  # Minimum days needed for rolling features
 
-    model_config = ConfigDict(env_file=".env")
+    model_config = ConfigDict(env_file=".env", extra="ignore")  # Ignore extra env vars (e.g., removed ALPHA_VANTAGE_API_KEY)
 
 
 settings = Settings()

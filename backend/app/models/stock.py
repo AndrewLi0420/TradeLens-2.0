@@ -27,6 +27,7 @@ class Stock(Base):
 
     __table_args__ = (
         Index('ix_stocks_symbol', 'symbol', unique=True),
+        Index('ix_stocks_company_name', 'company_name'),
     )
 
     def __repr__(self):

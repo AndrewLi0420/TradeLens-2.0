@@ -26,7 +26,7 @@ async def create_superuser() -> None:
 
 
 async def load_fortune_500_stocks() -> None:
-    """Load Fortune 500 stocks into database (idempotent)"""
+    """Load S&P 500 stocks into database (idempotent)"""
     async with async_session_maker() as session:
         # Check if stocks already exist
         existing_count = await get_stock_count(session)
@@ -38,12 +38,12 @@ async def load_fortune_500_stocks() -> None:
             return
         
         try:
-            logger.info("Loading Fortune 500 stocks...")
+            logger.info("Loading S&P 500 stocks...")
             stats = await import_fortune_500_stocks(session)
             logger.info(
-                f"Fortune 500 stocks loaded: {stats['imported']} imported, "
+                f"S&P 500 stocks loaded: {stats['imported']} imported, "
                 f"{stats['updated']} updated, {stats['errors']} errors"
             )
         except Exception as e:
-            logger.error(f"Error loading Fortune 500 stocks: {e}")
+            logger.error(f"Error loading S&P 500 stocks: {e}")
             raise

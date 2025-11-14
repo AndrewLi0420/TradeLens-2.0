@@ -1,0 +1,314 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>8</storyId>
+    <title>User Preference Integration with Recommendations</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-11</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/3-8-user-preference-integration-with-recommendations.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user</asA>
+    <iWant>recommendations filtered based on my holding period and risk tolerance preferences</iWant>
+    <soThat>recommendations match my investment style</soThat>
+    <tasks>
+      - Verify backend preference filtering implementation (AC: 1, 2)
+        - Review `backend/app/crud/recommendations.py` for preference filtering logic
+        - Verify `GET /api/v1/recommendations` endpoint accepts `holding_period` and `risk_level` query params
+        - Verify backend uses user preferences as default filters when query params not provided
+        - Test backend filtering logic with different preference combinations
+        - Document backend API behavior for preference filtering
+      - Update useRecommendations hook to use user preferences (AC: 1, 2, 3)
+        - Review existing `frontend/src/hooks/useRecommendations.ts` hook
+        - Add logic to fetch user preferences from `GET /api/v1/users/me` endpoint
+        - Use user preferences as default query params when filters not explicitly set
+        - Ensure hook refetches recommendations when preferences change
+        - Update hook to accept explicit filter overrides (for manual filtering)
+        - Use React Query for caching user preferences (5min staleTime, 10min cacheTime)
+      - Update Dashboard to show preference-based recommendations (AC: 1, 2, 4)
+        - Review `frontend/src/pages/Dashboard.tsx` component
+        - Ensure Dashboard uses `useRecommendations` hook with user preferences
+        - Verify recommendations displayed match user's holding period preference
+        - Verify recommendations prioritized by user's risk tolerance preference
+        - Handle case when preferences not set (show default recommendations)
+        - Test Dashboard displays recommendations correctly for different preference combinations
+      - Add preference indicator in Dashboard UI (AC: 5)
+        - Create or update component to display active preference filters
+        - Show current holding period preference (e.g., "Showing Daily recommendations")
+        - Show current risk tolerance preference (e.g., "Prioritizing Low risk")
+        - Use shadcn/ui Badge component for preference indicators
+        - Apply Tailwind CSS styling with financial blue/green accents
+        - Position preference indicators near filter controls or dashboard header
+      - Implement preference update and recommendation refresh (AC: 3)
+        - Review `frontend/src/pages/Profile.tsx` preference update flow
+        - Ensure preference updates trigger recommendation refetch
+        - Use React Query `invalidateQueries` to refresh recommendations after preference update
+        - Show loading state while recommendations refresh
+        - Verify recommendations update immediately after preference change
+        - Test preference update workflow end-to-end
+      - Handle default recommendations when preferences not set (AC: 4)
+        - Verify backend returns default recommendations when user has no preferences
+        - Ensure Dashboard handles null/undefined preferences gracefully
+        - Show default recommendations (all holding periods, all risk levels) when preferences not set
+        - Display message encouraging user to set preferences for personalized recommendations
+        - Test Dashboard behavior with new users (no preferences set)
+      - Testing
+        - Unit tests: useRecommendations hook uses user preferences correctly
+        - Unit tests: Preference indicator component displays correctly
+        - Integration tests: Dashboard shows recommendations filtered by preferences
+        - Integration tests: Preference updates trigger recommendation refresh
+        - Integration tests: Default recommendations shown when preferences not set
+        - E2E tests: User sets preferences and sees filtered recommendations
+        - E2E tests: User updates preferences and recommendations update immediately
+        - E2E tests: New user without preferences sees default recommendations
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. User's holding period preference filters recommendations shown
+    2. User's risk tolerance preference influences recommendation prioritization
+    3. Preferences can be updated and recommendations update accordingly
+    4. Default recommendations shown if preferences not set
+    5. Clear indication when preferences affect recommendation display
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>dist/epics.md</path>
+        <title>OpenAlpha - Epic Breakdown</title>
+        <section>Story 3.8: User Preference Integration with Recommendations</section>
+        <snippet>As a user, I want recommendations filtered based on my holding period and risk tolerance preferences, so that recommendations match my investment style.</snippet>
+      </doc>
+      <doc>
+        <path>dist/PRD.md</path>
+        <title>OpenAlpha Product Requirements Document</title>
+        <section>FR002: User Profile Management</section>
+        <snippet>Users can set holding period preferences (daily/weekly/monthly) and risk tolerance level (low/medium/high). Profile information persists across sessions.</snippet>
+      </doc>
+      <doc>
+        <path>dist/PRD.md</path>
+        <title>OpenAlpha Product Requirements Document</title>
+        <section>FR014: Recommendation Generation</section>
+        <snippet>Recommendation generation filtered by user preferences (holding period, risk tolerance).</snippet>
+      </doc>
+      <doc>
+        <path>dist/PRD.md</path>
+        <title>OpenAlpha Product Requirements Document</title>
+        <section>FR018: Recommendation Filtering & Sorting</section>
+        <snippet>Recommendation filtering by holding period and risk tolerance.</snippet>
+      </doc>
+      <doc>
+        <path>dist/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Recommendations & Dashboard</title>
+        <section>Story 3.8: User Preference Integration with Recommendations</section>
+        <snippet>User's holding period preference filters recommendations shown. User's risk tolerance preference influences recommendation prioritization. Preferences can be updated and recommendations update accordingly. Default recommendations shown if preferences not set. Clear indication when preferences affect recommendation display.</snippet>
+      </doc>
+      <doc>
+        <path>dist/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Recommendations & Dashboard</title>
+        <section>User Preference Filter</section>
+        <snippet>Filters recommendations by holding period and risk tolerance. User preferences, recommendations array. Filtered recommendations matching preferences. backend/app/crud/recommendations.py (filter_by_preferences).</snippet>
+      </doc>
+      <doc>
+        <path>dist/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Recommendations & Dashboard</title>
+        <section>Dashboard Load Workflow</section>
+        <snippet>Dashboard load workflow with preference filtering. Frontend fetches user preferences via GET /api/v1/users/me. Frontend uses preferences as default query params for recommendations endpoint.</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Pattern 3: Tier-Aware Recommendation Pre-Filtering</section>
+        <snippet>Filter recommendations at generation/retrieval time based on user's tier and tracked stocks (free tier limited to 5 stocks). Preference filtering works in conjunction with tier filtering (tier filtering applied first, then preference filtering).</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Epic to Architecture Mapping</section>
+        <snippet>Epic 3: Recommendations & Dashboard - Backend: backend/app/api/v1/endpoints/recommendations.py, Frontend: frontend/src/pages/Dashboard.tsx, frontend/src/components/recommendations/</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-5-user-profile-preferences-management.md</path>
+        <title>Story 1.5: User Profile & Preferences Management</title>
+        <section>Dev Notes</section>
+        <snippet>User preferences stored in user_preferences table: holding_period (daily/weekly/monthly), risk_tolerance (low/medium/high). Preferences accessible via GET /api/v1/users/me endpoint.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/2-8-recommendation-generation-logic.md</path>
+        <title>Story 2.8: Recommendation Generation Logic</title>
+        <section>Dev Notes</section>
+        <snippet>Backend preference filtering already implemented: backend/app/crud/recommendations.py filters recommendations by user preferences (holding_period, risk_tolerance). API endpoint GET /api/v1/recommendations accepts holding_period and risk_level query params, and uses user preferences as defaults when params not provided.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/3-7-freemium-tier-stock-limit-enforcement-in-ui.md</path>
+        <title>Story 3.7: Freemium Tier Stock Limit Enforcement in UI</title>
+        <section>Dev Agent Record</section>
+        <snippet>shadcn/ui Components Available: shadcn/ui is installed and configured with Badge, Dialog, Select components - REUSE Badge component for preference indicators rather than creating custom components. Component Organization: Common components in frontend/src/components/common/ - place PreferenceIndicator in common/ folder for reuse across features, similar to TierStatus component.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/app/crud/recommendations.py</path>
+        <kind>service</kind>
+        <symbol>get_recommendations</symbol>
+        <lines>18-125</lines>
+        <reason>Backend preference filtering implementation. Applies user preferences as defaults if query params not provided (lines 57-66). Filters recommendations by holding_period and risk_level based on user preferences.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/api/v1/endpoints/recommendations.py</path>
+        <kind>controller</kind>
+        <symbol>list_recommendations</symbol>
+        <lines>23-55</lines>
+        <reason>Recommendations API endpoint accepts holding_period and risk_level query params. Endpoint uses get_recommendations CRUD function which applies user preferences as defaults.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/hooks/useRecommendations.ts</path>
+        <kind>hook</kind>
+        <symbol>useRecommendations</symbol>
+        <lines>1-35</lines>
+        <reason>React Query hook for fetching recommendations. Currently accepts params but does not fetch user preferences. Needs update to fetch user preferences and use as default query params.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/pages/Dashboard.tsx</path>
+        <kind>component</kind>
+        <symbol>Dashboard</symbol>
+        <lines>20-195</lines>
+        <reason>Dashboard component displays recommendations. Currently fetches preferences (lines 31-36) and sets default filters (lines 39-54), but needs to ensure useRecommendations hook uses preferences correctly and shows preference indicators.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/pages/Profile.tsx</path>
+        <kind>component</kind>
+        <symbol>Profile</symbol>
+        <lines>14-253</lines>
+        <reason>Profile page allows users to update preferences. Preference update mutation (lines 58-75) updates React Query cache but does not invalidate recommendations query. Needs update to trigger recommendation refetch after preference update.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/common/TierStatus.tsx</path>
+        <kind>component</kind>
+        <symbol>TierStatus</symbol>
+        <lines>1-31</lines>
+        <reason>Example of common component pattern using Badge component. PreferenceIndicator component should follow similar pattern - use Badge component, place in components/common/ folder, use useTier-like hook pattern for preferences.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/crud/users.py</path>
+        <kind>service</kind>
+        <symbol>get_user_preferences</symbol>
+        <lines>1-50</lines>
+        <reason>CRUD function to fetch user preferences from database. Used by get_recommendations to apply user preferences as default filters.</reason>
+      </artifact>
+    </code>
+    <interfaces>
+      <interface>
+        <name>GET /api/v1/recommendations</name>
+        <kind>REST endpoint</kind>
+        <signature>GET /api/v1/recommendations?holding_period={daily|weekly|monthly}&amp;risk_level={low|medium|high}&amp;confidence_min={float}&amp;sort_by={date|confidence|risk|sentiment}&amp;sort_direction={asc|desc}</signature>
+        <path>backend/app/api/v1/endpoints/recommendations.py</path>
+        <description>Returns recommendations filtered by query params. Uses user preferences as defaults when holding_period or risk_level not provided. Applies tier-aware filtering (free tier: tracked stocks only, premium: all stocks).</description>
+      </interface>
+      <interface>
+        <name>GET /api/v1/users/me</name>
+        <kind>REST endpoint</kind>
+        <signature>GET /api/v1/users/me</signature>
+        <path>backend/app/api/v1/endpoints/users.py</path>
+        <description>Returns current user data including preferences object: { holding_period: "daily"|"weekly"|"monthly", risk_tolerance: "low"|"medium"|"high" }</description>
+      </interface>
+      <interface>
+        <name>useRecommendations hook</name>
+        <kind>React Query hook</kind>
+        <signature>useRecommendations(params?: GetRecommendationsParams): { data: Recommendation[], isLoading: boolean, isError: boolean, error: Error | null, refetch: () => void }</signature>
+        <path>frontend/src/hooks/useRecommendations.ts</path>
+        <description>React Query hook for fetching recommendations. Accepts optional params for filtering/sorting. Should fetch user preferences and use as default params when not explicitly provided.</description>
+      </interface>
+      <interface>
+        <name>getPreferences service</name>
+        <kind>service function</kind>
+        <signature>getPreferences(): Promise&lt;UserPreferences | null&gt;</signature>
+        <path>frontend/src/services/userPreferences.ts</path>
+        <description>Service function to fetch user preferences from GET /api/v1/users/me endpoint. Returns UserPreferences object or null if preferences not set.</description>
+      </interface>
+    </interfaces>
+    <dependencies>
+      <node>
+        <package>@tanstack/react-query</package>
+        <version>^5.90.6</version>
+        <reason>React Query for server state management, caching user preferences and recommendations, invalidateQueries for refreshing recommendations after preference updates</reason>
+      </node>
+      <node>
+        <package>@radix-ui/react-slot</package>
+        <version>^1.2.4</version>
+        <reason>shadcn/ui Badge component dependency for preference indicators</reason>
+      </node>
+      <node>
+        <package>react</package>
+        <version>^19.1.1</version>
+        <reason>React framework for frontend components</reason>
+      </node>
+      <node>
+        <package>axios</package>
+        <version>^1.13.1</version>
+        <reason>HTTP client for API requests to fetch user preferences and recommendations</reason>
+      </node>
+      <python>
+        <package>fastapi</package>
+        <version>&gt;=0.109.2</version>
+        <reason>FastAPI framework for REST API endpoints</reason>
+      </python>
+      <python>
+        <package>sqlalchemy</package>
+        <version>&gt;=2.0.0,&lt;3.0.0</version>
+        <reason>SQLAlchemy ORM for database queries to fetch user preferences and filter recommendations</reason>
+      </python>
+      <python>
+        <package>pydantic</package>
+        <version>&gt;=1.10.6</version>
+        <reason>Pydantic for request/response validation in FastAPI endpoints</reason>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Use React Query 5.x for server state management and caching. Configure staleTime: 5 minutes, cacheTime: 10 minutes, refetch on window focus. Per architecture.md Technology Stack Details.</constraint>
+    <constraint>Follow Tier-Aware Recommendation Pre-Filtering pattern (Pattern 3) from architecture.md: tier filtering applied first, then preference filtering. Free tier: filter by user_stock_tracking table (max 5 stocks), then apply preference filters. Premium tier: apply preference filters to all recommendations.</constraint>
+    <constraint>Use shadcn/ui component library for consistent UI components: Badge for preference indicators. Install via `npx shadcn-ui@latest init`. Customize colors to match black background with financial blue/green accents per UX Design Specification.</constraint>
+    <constraint>Apply Tailwind CSS styling with black background and financial blue/green accents per UX Design Specification. Use utility classes for responsive design.</constraint>
+    <constraint>Follow project structure patterns from architecture.md: frontend/src/pages/Dashboard.tsx, frontend/src/components/common/PreferenceIndicator.tsx (new component), frontend/src/hooks/useRecommendations.ts, backend/app/api/v1/endpoints/recommendations.py.</constraint>
+    <constraint>Backend preference filtering already implemented in Story 1.5 and Story 2.8: backend/app/crud/recommendations.py filters recommendations by user preferences (holding_period, risk_tolerance). API endpoint GET /api/v1/recommendations accepts holding_period and risk_level query params, and uses user preferences as defaults when params not provided.</constraint>
+    <constraint>User preferences stored in user_preferences table (from Story 1.5): holding_period (daily/weekly/monthly), risk_tolerance (low/medium/high). Preferences accessible via GET /api/v1/users/me endpoint.</constraint>
+    <constraint>Preference indicator component should be reusable and consistent with TierStatus component styling (Story 3.7). Place in frontend/src/components/common/ folder for reuse across features.</constraint>
+    <constraint>React Query patterns from Story 3.6-3.7: Use 5min staleTime, 10min cacheTime for user preferences. Use invalidateQueries to refresh recommendations after preference updates.</constraint>
+    <constraint>Preference filtering workflow (per tech spec): Backend filters recommendations by holding_period and risk_tolerance. If user preferences not set, backend returns default recommendations (all holding periods, all risk levels). Frontend should display active preferences and show clear indication when preferences affect recommendation display.</constraint>
+    <constraint>Follow UX Design Principles (Educational and Confidence-Building) from PRD: Preference-based filtering helps users understand how their investment style affects recommendations, building trust in the platform's personalization.</constraint>
+  </constraints>
+
+  <tests>
+    <standards>Testing uses Vitest for unit tests, React Testing Library for component tests, and Playwright for E2E tests. Unit tests mock React Query hooks and API services. Integration tests use QueryClientProvider wrapper. E2E tests run against local development server. Test files follow naming convention: *.test.ts for unit tests, *.test.tsx for component tests, *.spec.ts for E2E tests. Tests located in frontend/src/**/__tests__/ for unit/component tests, frontend/tests/e2e/ for E2E tests.</standards>
+    <locations>
+      <location>frontend/src/hooks/__tests__/ - Unit tests for React hooks</location>
+      <location>frontend/src/components/**/__tests__/ - Component unit tests</location>
+      <location>frontend/src/pages/__tests__/ - Page component integration tests</location>
+      <location>frontend/tests/e2e/ - End-to-end tests</location>
+      <location>backend/tests/ - Backend unit and integration tests</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Unit test: useRecommendations hook fetches user preferences and uses as default query params when filters not explicitly set. Mock getPreferences service and verify hook calls getRecommendations with preference values.</idea>
+      <idea ac="1">Unit test: useRecommendations hook accepts explicit filter overrides that take precedence over user preferences. Verify explicit params override preference defaults.</idea>
+      <idea ac="2">Unit test: useRecommendations hook refetches recommendations when preferences change. Use React Query queryClient.setQueryData to simulate preference update and verify refetch called.</idea>
+      <idea ac="5">Component test: PreferenceIndicator component displays current holding period preference (e.g., "Showing Daily recommendations"). Mock usePreferences hook and verify Badge displays correct text.</idea>
+      <idea ac="5">Component test: PreferenceIndicator component displays current risk tolerance preference (e.g., "Prioritizing Low risk"). Mock usePreferences hook and verify Badge displays correct text.</idea>
+      <idea ac="5">Component test: PreferenceIndicator component handles null/undefined preferences gracefully (shows default message or hides). Verify component renders correctly when preferences not set.</idea>
+      <idea ac="1,2,4">Integration test: Dashboard displays recommendations filtered by user's holding period preference. Set user preference to "daily", verify only daily recommendations (high risk) displayed.</idea>
+      <idea ac="1,2,4">Integration test: Dashboard displays recommendations prioritized by user's risk tolerance preference. Set user preference to "low", verify low risk recommendations appear first in list.</idea>
+      <idea ac="4">Integration test: Dashboard shows default recommendations when preferences not set. Create user with no preferences, verify all recommendations displayed (all holding periods, all risk levels).</idea>
+      <idea ac="4">Integration test: Dashboard displays message encouraging user to set preferences when preferences not set. Verify message appears when preferences are null/undefined.</idea>
+      <idea ac="3">Integration test: Preference update triggers recommendation refetch. Update preferences in Profile page, verify Dashboard recommendations refresh automatically using React Query invalidateQueries.</idea>
+      <idea ac="3">Integration test: Loading state shown while recommendations refresh after preference update. Verify loading indicator appears during refetch.</idea>
+      <idea ac="1,2,3,4,5">E2E test: User sets preferences and sees filtered recommendations. Navigate to Profile, set holding_period to "weekly" and risk_tolerance to "medium", navigate to Dashboard, verify recommendations match preferences.</idea>
+      <idea ac="3">E2E test: User updates preferences and recommendations update immediately. Set preferences, view Dashboard, update preferences in Profile, return to Dashboard, verify recommendations updated without page refresh.</idea>
+      <idea ac="4">E2E test: New user without preferences sees default recommendations. Create new user account, navigate to Dashboard, verify all recommendations displayed and message encouraging preference setup appears.</idea>
+    </ideas>
+  </tests>
+</story-context>
+

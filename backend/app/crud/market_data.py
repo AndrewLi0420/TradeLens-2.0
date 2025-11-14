@@ -65,6 +65,13 @@ async def get_latest_market_data(
     return result.scalar_one_or_none()
 
 
+def _to_naive_utc(dt: datetime) -> datetime:
+    """Convert a datetime to timezone-naive UTC for DB comparisons."""
+    if dt.tzinfo is None:
+        return dt
+    return dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+
 async def get_market_data_history(
     session: AsyncSession,
     stock_id: UUID,
@@ -83,13 +90,17 @@ async def get_market_data_history(
     Returns:
         List of MarketData instances ordered by timestamp (ascending)
     """
+    # Normalize to timezone-naive UTC to match TIMESTAMP WITHOUT TIME ZONE
+    start_naive = _to_naive_utc(start_date)
+    end_naive = _to_naive_utc(end_date)
+
     result = await session.execute(
         select(MarketData)
         .where(
             and_(
                 MarketData.stock_id == stock_id,
-                MarketData.timestamp >= start_date,
-                MarketData.timestamp <= end_date,
+                MarketData.timestamp >= start_naive,
+                MarketData.timestamp <= end_naive,
             )
         )
         .order_by(MarketData.timestamp.asc())
@@ -119,6 +130,17 @@ async def get_market_data_count(
     return result.scalar_one() or 0
 
 
+async def get_stock_ids_with_market_data(
+    session: AsyncSession,
+) -> set[UUID]:
+    """
+    Get set of stock IDs that have at least one market data row.
+    """
+    result = await session.execute(
+        select(MarketData.stock_id).distinct()
+    )
+    return {row[0] for row in result.all()}
+
 async def get_stocks_with_stale_data(
     session: AsyncSession,
     max_age_hours: int = 1,
@@ -140,7 +162,9 @@ async def get_stocks_with_stale_data(
     from datetime import timedelta
     from app.models.stock import Stock
     
-    cutoff_time = datetime.now(timezone.utc) - timedelta(hours=max_age_hours)
+    # Use timezone-naive UTC for comparison with TIMESTAMP WITHOUT TIME ZONE
+    from datetime import datetime as _dt
+    cutoff_time = _dt.utcnow() - timedelta(hours=max_age_hours)
     
     # Query all stocks and their latest market data timestamps
     # Using LEFT JOIN to include stocks with no market data

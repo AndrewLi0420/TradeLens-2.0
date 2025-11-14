@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>4</storyId>
+    <title>Recommendation Explanations with Transparency</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-27</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/3-4-recommendation-explanations-with-transparency.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user</asA>
+    <iWant>each recommendation to include brief, clear explanation with transparent data sources</iWant>
+    <soThat>I understand the reasoning behind recommendations and can trust them</soThat>
+    <tasks>
+      <task id="1">Ensure explanation field is populated in recommendation generation (AC: 1, 2, 3)</task>
+      <task id="2">Update RecommendationDetail component to display explanation prominently (AC: 1, 2, 3, 4, 5, 6, 7)</task>
+      <task id="3">Display data sources with timestamps in explanation (AC: 4, 5)</task>
+      <task id="4">Ensure explanations reference sentiment, ML signals, and risk (AC: 3)</task>
+      <task id="5">Add educational context to explanations (AC: 6, 7)</task>
+      <task id="6">Update RecommendationCard to show explanation preview (AC: 1, 2)</task>
+      <task id="7">Verify explanation data in API responses (AC: 1, 4, 5)</task>
+      <task id="8">Add explanation validation and quality checks (AC: 2, 3, 6, 7)</task>
+      <task id="9">Testing</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1">Each recommendation has explanation field populated</ac>
+    <ac id="2">Explanations are brief (2-3 sentences), clear, non-technical language</ac>
+    <ac id="3">Explanations reference: sentiment trends, ML model signals, risk factors</ac>
+    <ac id="4">Data sources displayed: "Sentiment from Twitter (updated 5 min ago)", "ML model confidence: 0.85 R²"</ac>
+    <ac id="5">Data freshness indicators shown (timestamps)</ac>
+    <ac id="6">Explanations help users understand quantitative reasoning</ac>
+    <ac id="7">Language avoids jargon or explains jargon when used</ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Story 3.4: Recommendation Explanations with Transparency">
+        Acceptance criteria and detailed design for recommendation explanations with transparency requirements.
+      </doc>
+      <doc path="dist/epics.md" title="Epic Breakdown" section="Story 3.4: Recommendation Explanations with Transparency">
+        User story and acceptance criteria for recommendation explanations.
+      </doc>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="FR016: Recommendation Explanations">
+        Functional requirement FR016 specifying that each recommendation includes brief explanation with transparent data sources.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture" section="Pattern 2: Confidence-Scored Recommendation Generation with Explanation Synthesis">
+        Pattern 2 describes the Explanation Synthesizer component that combines multiple signals into readable explanations with data source references and timestamps.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture" section="Epic to Architecture Mapping">
+        Epic 3 architecture mapping showing component locations: RecommendationDetail.tsx, RecommendationCard.tsx, recommendation_service.py.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture" section="Technology Stack Details">
+        React Query 5.x, Axios, Tailwind CSS, shadcn/ui integration details.
+      </doc>
+      <doc path="dist/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="APIs and Interfaces">
+        GET /api/v1/recommendations and GET /api/v1/recommendations/{id} endpoint specifications.
+      </doc>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="UX Design Principles">
+        Clarity and Transparency, Educational and Confidence-Building principles for explanation design.
+      </doc>
+    </docs>
+    <code>
+      <file path="backend/app/models/recommendation.py" kind="model" symbol="Recommendation" lines="14-61" reason="Recommendation model defines explanation field (Text, nullable=True) at line 42. This is the database schema for storing explanations." />
+      <file path="backend/app/services/recommendation_service.py" kind="service" symbol="generate_recommendations" lines="225-386" reason="Recommendation generation service that creates Recommendation instances. Currently does not populate explanation field - needs to be updated to include explanation generation per Pattern 2." />
+      <file path="backend/app/schemas/recommendation.py" kind="schema" symbol="RecommendationRead" lines="35-44" reason="Pydantic schema for API responses includes explanation field (str | None) at line 19. This ensures explanation is included in API responses." />
+      <file path="backend/app/api/v1/endpoints/recommendations.py" kind="endpoint" symbol="list_recommendations" lines="23-56" reason="GET /api/v1/recommendations endpoint returns list of RecommendationRead objects which include explanation field." />
+      <file path="backend/app/api/v1/endpoints/recommendations.py" kind="endpoint" symbol="get_recommendation" lines="58-111" reason="GET /api/v1/recommendations/{id} endpoint returns single RecommendationRead object with explanation field." />
+      <file path="frontend/src/pages/RecommendationDetail.tsx" kind="page" symbol="RecommendationDetail" lines="1-124" reason="Recommendation detail page component that displays full recommendation details. Needs to be updated to prominently display explanation field." />
+      <file path="frontend/src/components/recommendations/RecommendationDetailContent.tsx" kind="component" symbol="RecommendationDetailContent" lines="1-241" reason="Component that displays full recommendation details including explanation. Currently receives explanation prop but may need updates to display it more prominently with data sources and timestamps." />
+      <file path="frontend/src/components/recommendations/RecommendationCard.tsx" kind="component" symbol="RecommendationCard" lines="1-112" reason="Recommendation card component for list view. Currently does not display explanation preview - needs to be updated to show first 1-2 sentences of explanation." />
+      <file path="frontend/src/components/common/EducationalTooltip.tsx" kind="component" symbol="EducationalTooltip" lines="1-103" reason="Educational tooltip component already exists and can be used for explaining technical terms (R², confidence score, sentiment analysis) in explanations." />
+      <file path="frontend/src/services/recommendations.ts" kind="service" symbol="Recommendation" lines="15-26" reason="TypeScript interface for Recommendation includes explanation: string | null field at line 24. This ensures frontend types match backend schema." />
+      <file path="frontend/src/hooks/useRecommendationDetail.ts" kind="hook" symbol="useRecommendationDetail" lines="12-36" reason="React Query hook for fetching single recommendation. Returns Recommendation object which includes explanation field." />
+      <file path="frontend/src/hooks/useRecommendations.ts" kind="hook" symbol="useRecommendations" reason="React Query hook for fetching recommendations list. Returns array of Recommendation objects with explanation fields." />
+    </code>
+    <dependencies>
+      <node>
+        <package name="@tanstack/react-query" version="^5.90.6" reason="Server state management and caching for recommendation data" />
+        <package name="axios" version="^1.13.1" reason="HTTP client for API requests" />
+        <package name="@radix-ui/react-popover" version="^1.1.15" reason="Accessible popover component for educational tooltips" />
+        <package name="react-router-dom" version="^6.30.1" reason="Client-side routing for navigation" />
+        <package name="tailwindcss" version="^4.1.16" reason="Utility-first CSS framework for styling" />
+      </node>
+      <python>
+        <package name="fastapi" version=">=0.109.2" reason="Web framework for API endpoints" />
+        <package name="sqlalchemy" version=">=2.0.0,<3.0.0" reason="ORM for database operations" />
+        <package name="pydantic" version=">=1.10.6" reason="Data validation for API schemas" />
+        <package name="pytest" version=">=7.2.2" reason="Testing framework for backend tests" />
+        <package name="pytest-asyncio" version=">=0.21.0" reason="Async test support for FastAPI endpoints" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Follow Pattern 2 (Confidence-Scored Recommendation Generation with Explanation Synthesis) from architecture.md: explanations should combine ML predictions, sentiment scores, risk assessment, and user preferences into readable explanations that reference all data sources transparently.</constraint>
+    <constraint>Explanation generation should occur in backend/app/services/recommendation_service.py using the Explanation Synthesizer component described in Pattern 2.</constraint>
+    <constraint>Explanations should be stored in recommendations.explanation TEXT field (from Epic 2 database schema).</constraint>
+    <constraint>Use React Query 5.x for fetching recommendation data with explanations, following existing patterns from Story 3.1 and 3.2 (5min staleTime, 10min cacheTime).</constraint>
+    <constraint>Apply Tailwind CSS styling with black background and financial blue/green accents per UX Design Specification.</constraint>
+    <constraint>Use shadcn/ui components (Card, Typography, Badge) for consistent UI components as specified in tech spec dependencies.</constraint>
+    <constraint>Follow project structure patterns: frontend/src/pages/RecommendationDetail.tsx, frontend/src/components/recommendations/RecommendationCard.tsx.</constraint>
+    <constraint>API endpoints GET /api/v1/recommendations and GET /api/v1/recommendations/{id} already exist from Story 3.1 and 3.2 - verify they return explanation field.</constraint>
+    <constraint>Educational tooltips: Use EducationalTooltip component pattern (from Story 3.5 if available, or create basic version for R², confidence score, sentiment analysis terms).</constraint>
+    <constraint>Data source attribution: Display data sources and timestamps transparently per PRD FR016 (Recommendation Explanations) and UX Design Principles (Clarity and Transparency).</constraint>
+    <constraint>Explanation quality: Ensure explanations are brief (2-3 sentences), clear, non-technical language per AC #2 and PRD FR016.</constraint>
+    <constraint>Timestamp formatting: Use relative time formatting ("5 min ago", "1 hour ago") for better UX, convert from UTC timestamps stored in database.</constraint>
+    <constraint>Backend naming: Use snake_case for Python files and functions, PascalCase for classes per architecture Implementation Patterns.</constraint>
+    <constraint>Frontend naming: Use PascalCase for React components, camelCase for functions, use prefix for hooks per architecture Implementation Patterns.</constraint>
+    <constraint>Testing: Backend tests in backend/tests/ directory, frontend tests co-located with components or in __tests__ directories per architecture Implementation Patterns.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="GET /api/v1/recommendations" kind="REST endpoint" signature="GET /api/v1/recommendations?holding_period={daily|weekly|monthly}&amp;risk_level={low|medium|high}&amp;confidence_min={0.0-1.0}&amp;sort_by={date|confidence|risk|sentiment}&amp;sort_direction={asc|desc}" path="backend/app/api/v1/endpoints/recommendations.py:23-56">
+      Returns list of RecommendationRead objects. Each RecommendationRead includes explanation field (str | None). Headers: Authorization: Bearer {token} required.
+    </interface>
+    <interface name="GET /api/v1/recommendations/{id}" kind="REST endpoint" signature="GET /api/v1/recommendations/{id}" path="backend/app/api/v1/endpoints/recommendations.py:58-111">
+      Returns single RecommendationRead object with full details including explanation field. Headers: Authorization: Bearer {token} required.
+    </interface>
+    <interface name="Recommendation TypeScript Interface" kind="TypeScript interface" signature="interface Recommendation { id: string; stock: Stock; signal: 'buy' | 'sell' | 'hold'; confidence_score: number; sentiment_score: number | null; risk_level: 'low' | 'medium' | 'high'; explanation: string | null; created_at: string; }" path="frontend/src/services/recommendations.ts:15-26">
+      TypeScript interface for Recommendation objects. Includes explanation: string | null field.
+    </interface>
+    <interface name="RecommendationRead Pydantic Schema" kind="Pydantic schema" signature="class RecommendationRead(RecommendationBase): id: UUID; sentiment_score: float | None; created_at: datetime; stock: StockRead; explanation: str | None" path="backend/app/schemas/recommendation.py:35-44">
+      Pydantic schema for API responses. Includes explanation field from RecommendationBase (str | None).
+    </interface>
+    <interface name="useRecommendationDetail Hook" kind="React Query hook" signature="function useRecommendationDetail(id: string): UseQueryResult&lt;Recommendation, Error&gt;" path="frontend/src/hooks/useRecommendationDetail.ts:12-36">
+      React Query hook for fetching single recommendation. Returns Recommendation object with explanation field. Configured with 5min staleTime, 10min cacheTime.
+    </interface>
+    <interface name="EducationalTooltip Component" kind="React component" signature="function EducationalTooltip({ trigger, content, placement }: EducationalTooltipProps): JSX.Element" path="frontend/src/components/common/EducationalTooltip.tsx:22-70">
+      Educational tooltip component for explaining technical terms. Uses shadcn/ui Popover. Can be used for R², confidence score, sentiment analysis explanations.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend tests use pytest with pytest-asyncio for async FastAPI endpoints. Tests located in backend/tests/ directory organized by type (test_api/, test_services/, test_crud/). Frontend tests use Vitest with React Testing Library for component tests, Playwright for E2E tests. Tests co-located with components in __tests__ directories or in frontend/tests/e2e/ for E2E. React Query hooks tested with proper mocking of API calls. Test coverage targets: 70%+ for frontend components, 80%+ for backend API endpoints.
+    </standards>
+    <locations>
+      <location>backend/tests/test_api/</location>
+      <location>backend/tests/test_services/</location>
+      <location>frontend/src/components/**/__tests__/</location>
+      <location>frontend/src/hooks/__tests__/</location>
+      <location>frontend/tests/e2e/</location>
+    </locations>
+    <ideas>
+      <test ac="1">Unit test: Verify explanation field is populated when Recommendation instance is created in recommendation_service.py generate_recommendations function</test>
+      <test ac="1">Integration test: GET /api/v1/recommendations returns explanation field for each recommendation in response</test>
+      <test ac="1">Integration test: GET /api/v1/recommendations/{id} returns explanation field in response</test>
+      <test ac="2">Unit test: Explanation validation function ensures explanations are 2-3 sentences (50-150 words), clear, non-technical language</test>
+      <test ac="3">Unit test: Explanation generation includes sentiment trend references, ML model signal references, risk factor references</test>
+      <test ac="4">E2E test: User views recommendation detail, sees data sources displayed: "Sentiment from Twitter (updated 5 min ago)", "ML model confidence: 0.85 R²"</test>
+      <test ac="5">E2E test: User views recommendation detail, sees data freshness indicators (timestamps) displayed in user-friendly format ("5 min ago", "1 hour ago")</test>
+      <test ac="6">E2E test: User views recommendation explanation, understands quantitative reasoning (usability test)</test>
+      <test ac="7">E2E test: User views recommendation explanation, sees tooltips explaining jargon terms (R², confidence score, sentiment analysis) when hovering/clicking</test>
+      <test ac="1,2">Unit test: RecommendationCard component displays explanation preview (first 1-2 sentences) correctly</test>
+      <test ac="1,2,3,4,5,6,7">Unit test: RecommendationDetailContent component displays explanation prominently with data sources and timestamps</test>
+      <test ac="2,3,6,7">Unit test: Explanation validation function logs warnings if explanations don't meet quality criteria (length, content, jargon)</test>
+    </ideas>
+  </tests>
+</story-context>
+

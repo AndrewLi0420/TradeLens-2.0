@@ -1,0 +1,214 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>5</storyId>
+    <title>Educational Tooltips & Inline Help</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-11T00:19:35Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/3-5-educational-tooltips-inline-help.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As a user</asA>
+    <iWant>I want tooltips and inline help explaining quantitative concepts (confidence scores, sentiment, R²)</iWant>
+    <soThat>so that I can learn about quantitative trading as I use the platform</soThat>
+    <tasks>
+      <task id="1">Create EducationalTooltip component (AC: 1, 2, 3, 4, 6)</task>
+      <task id="2">Define tooltip content for key quantitative concepts (AC: 1, 2, 3)</task>
+      <task id="3">Integrate tooltips into RecommendationDetail component (AC: 1, 2, 3, 4)</task>
+      <task id="4">Integrate tooltips into RecommendationCard component (AC: 1, 2, 4)</task>
+      <task id="5">Add inline help sections to Dashboard (AC: 4, 5)</task>
+      <task id="6">Implement first-time user onboarding tooltips (AC: 5)</task>
+      <task id="7">Add tooltips to Search and other key pages (AC: 1, 4)</task>
+      <task id="8">Ensure tooltip accessibility and mobile optimization (AC: 1, 4)</task>
+      <task id="9">Testing</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">Tooltips appear on hover/click for key terms: "confidence score", "sentiment analysis", "R²"</criterion>
+    <criterion id="AC2">Tooltip content explains concepts in simple language</criterion>
+    <criterion id="AC3">Educational content emphasizes transparency (how things are calculated)</criterion>
+    <criterion id="AC4">Inline help available throughout interface</criterion>
+    <criterion id="AC5">First-time user sees onboarding tooltips</criterion>
+    <criterion id="AC6">Help content is concise and actionable</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>dist/PRD.md</path>
+        <title>OpenAlpha Product Requirements Document</title>
+        <section>FR019: Contextual Educational Tooltips</section>
+        <snippet>Key quantitative concepts explained via tooltips or inline help. Educational content explains terms like "confidence score", "sentiment analysis", "R²". Educational content emphasizes transparency (how things are calculated). Educational content builds user understanding over time.</snippet>
+      </doc>
+      <doc>
+        <path>dist/PRD.md</path>
+        <title>OpenAlpha Product Requirements Document</title>
+        <section>UX Design Principles - Educational and Confidence-Building</section>
+        <snippet>Educational tooltips/inline help. Tooltips appear on first interaction with each element. Educational content: Brief explanations and tooltips only (no comprehensive educational courses).</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Technology Stack Details</section>
+        <snippet>shadcn/ui component library integration, React 18+ patterns. Frontend uses React Query for efficient caching and optimistic updates. Tailwind CSS styling with black background and financial blue/green accents.</snippet>
+      </doc>
+      <doc>
+        <path>dist/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Recommendations & Dashboard</title>
+        <section>Story 3.5: Educational Tooltips & Inline Help</section>
+        <snippet>Acceptance criteria and detailed design for educational tooltips. Frontend component specifications. Accessibility requirements (WCAG compliance, keyboard navigation).</snippet>
+      </doc>
+      <doc>
+        <path>dist/epics.md</path>
+        <title>Epics Document</title>
+        <section>Story 3.5: Educational Tooltips & Inline Help</section>
+        <snippet>User story and acceptance criteria for educational tooltips with transparency emphasis.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/3-4-recommendation-explanations-with-transparency.md</path>
+        <title>Story 3.4: Recommendation Explanations with Transparency</title>
+        <section>Dev Agent Record</section>
+        <snippet>EducationalTooltip component was created in Story 3.4 for explaining R², confidence score, and sentiment analysis terms - REUSE this component rather than recreating it. Component is located at frontend/src/components/common/EducationalTooltip.tsx. Tooltip integration pattern established in RecommendationDetailContent.tsx.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>frontend/src/components/common/EducationalTooltip.tsx</path>
+        <kind>component</kind>
+        <symbol>EducationalTooltip</symbol>
+        <lines>1-103</lines>
+        <reason>Existing EducationalTooltip component from Story 3.4 - REUSE this component. Uses shadcn/ui Popover, supports hover (desktop) and click (mobile), styled with black background and financial blue/green accents. Includes tooltipContent object with pre-defined content for confidenceScore, rSquared, sentimentAnalysis, mlModelSignals. Includes InfoTooltip helper component.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/recommendations/RecommendationDetailContent.tsx</path>
+        <kind>component</kind>
+        <symbol>RecommendationDetailContent</symbol>
+        <lines>102, 107, 119</lines>
+        <reason>Existing tooltip integration pattern - InfoTooltip used at lines 102 (confidence score), 107 (R²), 119 (sentiment analysis). Follow this same pattern for additional tooltip placements in this story.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/recommendations/RecommendationCard.tsx</path>
+        <kind>component</kind>
+        <symbol>RecommendationCard</symbol>
+        <lines>1-149</lines>
+        <reason>RecommendationCard component displays recommendation metrics (confidence score, sentiment, risk level) - needs tooltips added per AC1, AC2, AC4. Currently displays confidencePercent, sentiment text, risk level badge without tooltips.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/pages/Dashboard.tsx</path>
+        <kind>page</kind>
+        <symbol>Dashboard</symbol>
+        <lines>1-91</lines>
+        <reason>Dashboard page component - needs inline help sections and onboarding tooltips per AC4, AC5. Currently displays dashboard with filter controls and recommendation list, but no help content or onboarding tooltips.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/pages/Search.tsx</path>
+        <kind>page</kind>
+        <symbol>Search</symbol>
+        <lines>1-94</lines>
+        <reason>Search page component - needs tooltips for search functionality explanation and quantitative terms per AC1, AC4. Currently displays search input and results but no tooltips.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/pages/RecommendationDetail.tsx</path>
+        <kind>page</kind>
+        <symbol>RecommendationDetail</symbol>
+        <lines>1-124</lines>
+        <reason>RecommendationDetail page wrapper - uses RecommendationDetailContent which already has some tooltips, but may need additional tooltip placements per story requirements.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/common/EducationalTooltip.tsx</path>
+        <kind>test</kind>
+        <symbol>EducationalTooltip.test.tsx</symbol>
+        <lines>1-95</lines>
+        <reason>Existing test file for EducationalTooltip component - follow similar testing patterns for new tooltip features. Tests cover rendering, hover (desktop), click (mobile), placement prop, InfoTooltip component.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/recommendations/__tests__/RecommendationDetailContent.test.tsx</path>
+        <kind>test</kind>
+        <symbol>RecommendationDetailContent.test.tsx</symbol>
+        <lines>1-176</lines>
+        <reason>Existing test file for RecommendationDetailContent - comprehensive unit tests (13 tests) covering component rendering, tooltip integration, explanation display. Follow similar testing patterns for tooltip components in this story.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="@radix-ui/react-popover" version="^1.1.15" />
+        <package name="@tanstack/react-query" version="^5.90.6" />
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="react-router-dom" version="^6.30.1" />
+        <package name="tailwindcss" version="^4.1.16" />
+        <package name="lucide-react" version="^0.552.0" />
+      </ecosystem>
+      <ecosystem name="testing">
+        <package name="vitest" version="^3.2.4" />
+        <package name="@testing-library/react" version="^16.3.0" />
+        <package name="@testing-library/user-event" version="^14.6.1" />
+        <package name="@playwright/test" version="^1.56.1" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Follow UX Design Principles (Educational and Confidence-Building, Clarity and Transparency) from PRD: tooltips should help users understand quantitative concepts progressively, emphasize transparency of calculations, and build trust through clear explanations.</constraint>
+    <constraint>Use shadcn/ui Popover component for tooltips (already installed from Story 3.1-3.4) - provides accessibility, keyboard navigation, and mobile support out of the box.</constraint>
+    <constraint>Tooltip content should be stored in a centralized location (frontend/src/lib/tooltipContent.ts) for consistency and easy updates.</constraint>
+    <constraint>Tooltip trigger mechanism: Hover for desktop (better UX), click for mobile (touch-friendly). shadcn/ui Popover supports both via trigger prop.</constraint>
+    <constraint>Educational content should reference how concepts are calculated (transparency requirement from PRD FR019): e.g., "Confidence score is calculated from R² analysis of model performance" rather than just "higher is better".</constraint>
+    <constraint>Follow existing component patterns from Story 3.4: Use Tailwind CSS styling with black background and financial blue/green accents, maintain consistency with RecommendationDetail and RecommendationCard components.</constraint>
+    <constraint>Onboarding tooltip sequence should be non-intrusive: allow skip, show one at a time, use localStorage to track completion (don't show again after completion).</constraint>
+    <constraint>Tooltip positioning: Use shadcn/ui Popover's positioning system to avoid overlap with other UI elements, especially in list views.</constraint>
+    <constraint>Accessibility: shadcn/ui Popover components are built on Radix UI primitives which provide keyboard navigation and screen reader support. Verify ARIA labels are properly set.</constraint>
+    <constraint>REUSE EducationalTooltip component from Story 3.4 (frontend/src/components/common/EducationalTooltip.tsx) rather than recreating it.</constraint>
+    <constraint>Follow tooltip integration pattern from Story 3.4: RecommendationDetailContent.tsx uses InfoTooltip at lines 102, 107, 119 - use same pattern for additional tooltip placements.</constraint>
+    <constraint>Component organization: Common components organized in frontend/src/components/common/ - place EducationalTooltip and InlineHelp here.</constraint>
+    <constraint>Testing patterns: Story 3.4 added comprehensive unit tests (13 tests for RecommendationDetailContent, 6 for RecommendationCard) and E2E tests - follow similar testing patterns for tooltip components.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>EducationalTooltip Component Interface</name>
+      <kind>React Component</kind>
+      <signature>EducationalTooltip({ trigger: React.ReactNode, content: string, placement?: 'top' | 'bottom' | 'left' | 'right' })</signature>
+      <path>frontend/src/components/common/EducationalTooltip.tsx</path>
+    </interface>
+    <interface>
+      <name>InfoTooltip Helper Component</name>
+      <kind>React Component</kind>
+      <signature>InfoTooltip({ content: string, placement?: 'top' | 'bottom' | 'left' | 'right' })</signature>
+      <path>frontend/src/components/common/EducationalTooltip.tsx</path>
+    </interface>
+    <interface>
+      <name>tooltipContent Object</name>
+      <kind>TypeScript Object</kind>
+      <signature>tooltipContent: { confidenceScore: string, rSquared: string, sentimentAnalysis: string, mlModelSignals: string }</signature>
+      <path>frontend/src/components/common/EducationalTooltip.tsx</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Testing follows established patterns from Story 3.4: Unit tests using Vitest and @testing-library/react, E2E tests using Playwright. Unit tests cover component rendering, user interactions (hover/click), accessibility, and tooltip content display. E2E tests cover user flows, first-time user onboarding, and tooltip interactions across different viewports. Test files located in frontend/src/components/**/__tests__/ for unit tests and frontend/tests/e2e/ for E2E tests. Use vitest for unit tests with jsdom environment, Playwright for E2E tests with real browser automation.</standards>
+    <locations>
+      <location>frontend/src/components/**/__tests__/*.test.tsx</location>
+      <location>frontend/tests/e2e/*.spec.ts</location>
+    </locations>
+    <ideas>
+      <idea criterion="AC1">Unit test: EducationalTooltip component renders correctly with content for "confidence score", "sentiment analysis", "R²" terms</idea>
+      <idea criterion="AC1">Unit test: Tooltip appears on hover (desktop) and click (mobile) for key terms</idea>
+      <idea criterion="AC2">Unit test: Tooltip content utility functions return correct content for each term with simple, non-technical language</idea>
+      <idea criterion="AC3">Unit test: Tooltip content includes transparency information (how concepts are calculated)</idea>
+      <idea criterion="AC4">Integration test: Tooltips appear correctly in RecommendationDetail and RecommendationCard components</idea>
+      <idea criterion="AC4">Integration test: Inline help sections display correctly in Dashboard</idea>
+      <idea criterion="AC5">E2E test: First-time user sees onboarding tooltips on dashboard visit</idea>
+      <idea criterion="AC5">E2E test: Onboarding tooltip sequence works correctly (sequential display, skip option, localStorage tracking)</idea>
+      <idea criterion="AC6">Unit test: Tooltip content is concise (2-3 sentences max) and actionable</idea>
+      <idea criterion="AC1, AC4">E2E test: User can interact with tooltips (hover/click) and see explanations</idea>
+      <idea criterion="AC1, AC4">E2E test: Tooltips are accessible via keyboard navigation (Tab, Enter/Space, Escape)</idea>
+      <idea criterion="AC1, AC4">Accessibility test: Screen reader can read tooltip content (ARIA labels verified)</idea>
+      <idea criterion="AC1, AC4">E2E test: Tooltip display on mobile viewports (375px, 414px widths) - click interaction works, no overlap issues</idea>
+    </ideas>
+  </tests>
+</story-context>
+

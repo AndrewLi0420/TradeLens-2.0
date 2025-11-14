@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeLens Design Direction Mockups</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #000000;
+            color: #ffffff;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #10B981, #3B82F6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #9CA3AF;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .direction-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            background: #000;
+            padding: 1rem 0;
+            z-index: 100;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: #2a2a2a;
+        }
+
+        .nav-btn.active {
+            background: #1E3A8A;
+            border-color: #1E3A8A;
+        }
+
+        .direction-section {
+            display: none;
+            margin-bottom: 4rem;
+        }
+
+        .direction-section.active {
+            display: block;
+        }
+
+        .direction-header {
+            margin-bottom: 2rem;
+        }
+
+        .direction-name {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .direction-personality {
+            font-size: 1.125rem;
+            color: #9CA3AF;
+            margin-bottom: 1rem;
+        }
+
+        .direction-characteristics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .characteristic {
+            background: #111111;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .characteristic-label {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .characteristic-value {
+            font-size: 0.875rem;
+            color: #ffffff;
+        }
+
+        .mockup-container {
+            background: #000000;
+            border: 2px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .mockup-viewport {
+            background: #000000;
+            border-radius: 8px;
+            overflow: hidden;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Navigation Styles */
+        .top-nav {
+            background: #111111;
+            border-bottom: 1px solid #2a2a2a;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            color: #9CA3AF;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #ffffff;
+        }
+
+        .nav-link.active {
+            border-bottom: 2px solid #1E3A8A;
+            padding-bottom: 0.5rem;
+        }
+
+        .search-bar {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            color: white;
+            font-size: 0.875rem;
+            width: 200px;
+        }
+
+        /* Portfolio Card Styles */
+        .portfolio-card {
+            background: #111111;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .portfolio-card:hover {
+            border-color: #3a3a3a;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .stock-symbol {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stock-name {
+            font-size: 0.875rem;
+            color: #9CA3AF;
+            margin-bottom: 1rem;
+        }
+
+        .stock-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-value {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-high {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+
+        .badge-medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
+        }
+
+        .badge-low {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+        }
+
+        .grid-layout {
+            display: grid;
+            gap: 1.5rem;
+            padding: 2rem;
+        }
+
+        .list-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 2rem;
+        }
+
+        .list-item {
+            background: #111111;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .list-item:hover {
+            border-color: #3a3a3a;
+        }
+
+        .price-change {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .price-positive {
+            color: #10B981;
+        }
+
+        .price-negative {
+            color: #EF4444;
+        }
+
+        .sidebar {
+            background: #111111;
+            border-right: 1px solid #2a2a2a;
+            padding: 2rem;
+            width: 250px;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+        }
+
+        .two-column {
+            display: flex;
+        }
+
+        .stats-bar {
+            background: #111111;
+            border-bottom: 1px solid #2a2a2a;
+            padding: 1rem 2rem;
+            display: flex;
+            gap: 2rem;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 TradeLens Design Direction Mockups</h1>
+        <p class="subtitle">Explore 8 different design approaches for your portfolio dashboard. Each direction shows a complete vision for how users will interact with TradeLens. Navigate through them to see which resonates.</p>
+
+        <div class="direction-nav">
+            <button class="nav-btn active" onclick="showDirection(1)">Direction 1</button>
+            <button class="nav-btn" onclick="showDirection(2)">Direction 2</button>
+            <button class="nav-btn" onclick="showDirection(3)">Direction 3</button>
+            <button class="nav-btn" onclick="showDirection(4)">Direction 4</button>
+            <button class="nav-btn" onclick="showDirection(5)">Direction 5</button>
+            <button class="nav-btn" onclick="showDirection(6)">Direction 6</button>
+            <button class="nav-btn" onclick="showDirection(7)">Direction 7</button>
+            <button class="nav-btn" onclick="showDirection(8)">Direction 8</button>
+        </div>
+
+        <!-- Direction 1: Card Gallery - Spacious -->
+        <div class="direction-section active" id="direction-1">
+            <div class="direction-header">
+                <div class="direction-name">Card Gallery - Spacious</div>
+                <div class="direction-personality">Professional & Efficient • Large Data Blocks</div>
+                <div class="direction-characteristics">
+                    <div class="characteristic">
+                        <div class="characteristic-label">Layout</div>
+                        <div class="characteristic-value">Grid of large cards</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Density</div>
+                        <div class="characteristic-value">Spacious</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Navigation</div>
+                        <div class="characteristic-value">Top tabs</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Focus</div>
+                        <div class="characteristic-value">Portfolio first</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mockup-container">
+                <div class="mockup-viewport">
+                    <div class="top-nav">
+                        <div class="nav-links">
+                            <a href="#" class="nav-link active">Portfolio</a>
+                            <a href="#" class="nav-link">Historical</a>
+                            <a href="#" class="nav-link">Profile</a>
+                        </div>
+                        <input type="text" class="search-bar" placeholder="Search stocks...">
+                    </div>
+                    <div class="grid-layout" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));">
+                        <div class="portfolio-card">
+                            <div class="stock-symbol">AAPL</div>
+                            <div class="stock-name">Apple Inc.</div>
+                            <div class="price-change price-positive">+$1,234.56</div>
+                            <div style="color: #9CA3AF; margin-bottom: 1rem;">+5.2% today</div>
+                            <div class="stock-metrics">
+                                <div class="metric">
+                                    <div class="metric-label">Confidence</div>
+                                    <div class="metric-value" style="color: #F59E0B;">85%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Sentiment</div>
+                                    <div class="metric-value" style="color: #10B981;">+0.8</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Risk</div>
+                                    <div class="metric-value"><span class="badge badge-medium">Medium</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="portfolio-card">
+                            <div class="stock-symbol">MSFT</div>
+                            <div class="stock-name">Microsoft Corp.</div>
+                            <div class="price-change price-positive">+$856.32</div>
+                            <div style="color: #9CA3AF; margin-bottom: 1rem;">+3.1% today</div>
+                            <div class="stock-metrics">
+                                <div class="metric">
+                                    <div class="metric-label">Confidence</div>
+                                    <div class="metric-value" style="color: #F59E0B;">92%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Sentiment</div>
+                                    <div class="metric-value" style="color: #10B981;">+0.9</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Risk</div>
+                                    <div class="metric-value"><span class="badge badge-low">Low</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="portfolio-card">
+                            <div class="stock-symbol">GOOGL</div>
+                            <div class="stock-name">Alphabet Inc.</div>
+                            <div class="price-change price-negative">-$234.12</div>
+                            <div style="color: #9CA3AF; margin-bottom: 1rem;">-1.2% today</div>
+                            <div class="stock-metrics">
+                                <div class="metric">
+                                    <div class="metric-label">Confidence</div>
+                                    <div class="metric-value" style="color: #F59E0B;">78%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Sentiment</div>
+                                    <div class="metric-value" style="color: #EF4444;">-0.3</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Risk</div>
+                                    <div class="metric-value"><span class="badge badge-medium">Medium</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="portfolio-card">
+                            <div class="stock-symbol">TSLA</div>
+                            <div class="stock-name">Tesla Inc.</div>
+                            <div class="price-change price-positive">+$2,145.67</div>
+                            <div style="color: #9CA3AF; margin-bottom: 1rem;">+8.5% today</div>
+                            <div class="stock-metrics">
+                                <div class="metric">
+                                    <div class="metric-label">Confidence</div>
+                                    <div class="metric-value" style="color: #F59E0B;">88%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Sentiment</div>
+                                    <div class="metric-value" style="color: #10B981;">+1.2</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Risk</div>
+                                    <div class="metric-value"><span class="badge badge-high">High</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="portfolio-card">
+                            <div class="stock-symbol">AMZN</div>
+                            <div class="stock-name">Amazon.com Inc.</div>
+                            <div class="price-change price-positive">+$567.89</div>
+                            <div style="color: #9CA3AF; margin-bottom: 1rem;">+2.8% today</div>
+                            <div class="stock-metrics">
+                                <div class="metric">
+                                    <div class="metric-label">Confidence</div>
+                                    <div class="metric-value" style="color: #F59E0B;">81%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Sentiment</div>
+                                    <div class="metric-value" style="color: #10B981;">+0.5</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Risk</div>
+                                    <div class="metric-value"><span class="badge badge-medium">Medium</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="portfolio-card">
+                            <div class="stock-symbol">NVDA</div>
+                            <div class="stock-name">NVIDIA Corp.</div>
+                            <div class="price-change price-positive">+$3,421.45</div>
+                            <div style="color: #9CA3AF; margin-bottom: 1rem;">+12.3% today</div>
+                            <div class="stock-metrics">
+                                <div class="metric">
+                                    <div class="metric-label">Confidence</div>
+                                    <div class="metric-value" style="color: #F59E0B;">95%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Sentiment</div>
+                                    <div class="metric-value" style="color: #10B981;">+1.5</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label">Risk</div>
+                                    <div class="metric-value"><span class="badge badge-high">High</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 2: Dense Dashboard -->
+        <div class="direction-section" id="direction-2">
+            <div class="direction-header">
+                <div class="direction-name">Dense Dashboard</div>
+                <div class="direction-personality">Information-Rich • Power User Focused</div>
+                <div class="direction-characteristics">
+                    <div class="characteristic">
+                        <div class="characteristic-label">Layout</div>
+                        <div class="characteristic-value">Compact grid</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Density</div>
+                        <div class="characteristic-value">Dense</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Navigation</div>
+                        <div class="characteristic-value">Top tabs</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Focus</div>
+                        <div class="characteristic-value">Maximize info</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mockup-container">
+                <div class="mockup-viewport">
+                    <div class="top-nav">
+                        <div class="nav-links">
+                            <a href="#" class="nav-link active">Portfolio</a>
+                            <a href="#" class="nav-link">Historical</a>
+                            <a href="#" class="nav-link">Profile</a>
+                        </div>
+                        <input type="text" class="search-bar" placeholder="Search...">
+                    </div>
+                    <div class="stats-bar">
+                        <div class="stat">
+                            <div class="stat-label">Total Portfolio</div>
+                            <div class="stat-value">$45,234.56</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Today's Change</div>
+                            <div class="stat-value" style="color: #10B981;">+$8,234.12</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Active Stocks</div>
+                            <div class="stat-value">6</div>
+                        </div>
+                    </div>
+                    <div class="grid-layout" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                <div>
+                                    <div class="stock-symbol" style="font-size: 1.25rem;">AAPL</div>
+                                    <div class="stock-name" style="font-size: 0.75rem;">Apple Inc.</div>
+                                </div>
+                                <div class="price-change price-positive" style="font-size: 1rem;">+5.2%</div>
+                            </div>
+                            <div class="stock-metrics" style="grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 0.75rem;">
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Conf</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #F59E0B;">85%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Sent</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #10B981;">+0.8</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Risk</div>
+                                    <div class="metric-value" style="font-size: 0.75rem;"><span class="badge badge-medium">M</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                <div>
+                                    <div class="stock-symbol" style="font-size: 1.25rem;">MSFT</div>
+                                    <div class="stock-name" style="font-size: 0.75rem;">Microsoft Corp.</div>
+                                </div>
+                                <div class="price-change price-positive" style="font-size: 1rem;">+3.1%</div>
+                            </div>
+                            <div class="stock-metrics" style="grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 0.75rem;">
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Conf</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #F59E0B;">92%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Sent</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #10B981;">+0.9</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Risk</div>
+                                    <div class="metric-value" style="font-size: 0.75rem;"><span class="badge badge-low">L</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                <div>
+                                    <div class="stock-symbol" style="font-size: 1.25rem;">GOOGL</div>
+                                    <div class="stock-name" style="font-size: 0.75rem;">Alphabet Inc.</div>
+                                </div>
+                                <div class="price-change price-negative" style="font-size: 1rem;">-1.2%</div>
+                            </div>
+                            <div class="stock-metrics" style="grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 0.75rem;">
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Conf</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #F59E0B;">78%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Sent</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #EF4444;">-0.3</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Risk</div>
+                                    <div class="metric-value" style="font-size: 0.75rem;"><span class="badge badge-medium">M</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                <div>
+                                    <div class="stock-symbol" style="font-size: 1.25rem;">TSLA</div>
+                                    <div class="stock-name" style="font-size: 0.75rem;">Tesla Inc.</div>
+                                </div>
+                                <div class="price-change price-positive" style="font-size: 1rem;">+8.5%</div>
+                            </div>
+                            <div class="stock-metrics" style="grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 0.75rem;">
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Conf</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #F59E0B;">88%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Sent</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #10B981;">+1.2</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Risk</div>
+                                    <div class="metric-value" style="font-size: 0.75rem;"><span class="badge badge-high">H</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                <div>
+                                    <div class="stock-symbol" style="font-size: 1.25rem;">AMZN</div>
+                                    <div class="stock-name" style="font-size: 0.75rem;">Amazon.com Inc.</div>
+                                </div>
+                                <div class="price-change price-positive" style="font-size: 1rem;">+2.8%</div>
+                            </div>
+                            <div class="stock-metrics" style="grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 0.75rem;">
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Conf</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #F59E0B;">81%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Sent</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #10B981;">+0.5</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Risk</div>
+                                    <div class="metric-value" style="font-size: 0.75rem;"><span class="badge badge-medium">M</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                <div>
+                                    <div class="stock-symbol" style="font-size: 1.25rem;">NVDA</div>
+                                    <div class="stock-name" style="font-size: 0.75rem;">NVIDIA Corp.</div>
+                                </div>
+                                <div class="price-change price-positive" style="font-size: 1rem;">+12.3%</div>
+                            </div>
+                            <div class="stock-metrics" style="grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 0.75rem;">
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Conf</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #F59E0B;">95%</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Sent</div>
+                                    <div class="metric-value" style="font-size: 0.875rem; color: #10B981;">+1.5</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" style="font-size: 0.7rem;">Risk</div>
+                                    <div class="metric-value" style="font-size: 0.75rem;"><span class="badge badge-high">H</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 3: List View - Scanable -->
+        <div class="direction-section" id="direction-3">
+            <div class="direction-header">
+                <div class="direction-name">List View - Scanable</div>
+                <div class="direction-personality">Quick Scanning • Efficient Navigation</div>
+                <div class="direction-characteristics">
+                    <div class="characteristic">
+                        <div class="characteristic-label">Layout</div>
+                        <div class="characteristic-value">Vertical list</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Density</div>
+                        <div class="characteristic-value">Balanced</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Navigation</div>
+                        <div class="characteristic-value">Top tabs</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Focus</div>
+                        <div class="characteristic-value">Quick scan</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mockup-container">
+                <div class="mockup-viewport">
+                    <div class="top-nav">
+                        <div class="nav-links">
+                            <a href="#" class="nav-link active">Portfolio</a>
+                            <a href="#" class="nav-link">Historical</a>
+                            <a href="#" class="nav-link">Profile</a>
+                        </div>
+                        <input type="text" class="search-bar" placeholder="Search stocks...">
+                    </div>
+                    <div class="list-layout">
+                        <div class="list-item">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <div>
+                                        <div class="stock-symbol" style="font-size: 1.25rem; margin-bottom: 0.25rem;">AAPL</div>
+                                        <div class="stock-name" style="font-size: 0.875rem;">Apple Inc.</div>
+                                    </div>
+                                    <div style="display: flex; gap: 1.5rem; margin-left: 2rem;">
+                                        <div class="metric">
+                                            <div class="metric-label">Confidence</div>
+                                            <div class="metric-value" style="color: #F59E0B;">85%</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Sentiment</div>
+                                            <div class="metric-value" style="color: #10B981;">+0.8</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Risk</div>
+                                            <div class="metric-value"><span class="badge badge-medium">Medium</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="price-change price-positive" style="font-size: 1.5rem;">+$1,234.56</div>
+                                <div style="color: #9CA3AF; font-size: 0.875rem;">+5.2%</div>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <div>
+                                        <div class="stock-symbol" style="font-size: 1.25rem; margin-bottom: 0.25rem;">MSFT</div>
+                                        <div class="stock-name" style="font-size: 0.875rem;">Microsoft Corp.</div>
+                                    </div>
+                                    <div style="display: flex; gap: 1.5rem; margin-left: 2rem;">
+                                        <div class="metric">
+                                            <div class="metric-label">Confidence</div>
+                                            <div class="metric-value" style="color: #F59E0B;">92%</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Sentiment</div>
+                                            <div class="metric-value" style="color: #10B981;">+0.9</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Risk</div>
+                                            <div class="metric-value"><span class="badge badge-low">Low</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="price-change price-positive" style="font-size: 1.5rem;">+$856.32</div>
+                                <div style="color: #9CA3AF; font-size: 0.875rem;">+3.1%</div>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <div>
+                                        <div class="stock-symbol" style="font-size: 1.25rem; margin-bottom: 0.25rem;">GOOGL</div>
+                                        <div class="stock-name" style="font-size: 0.875rem;">Alphabet Inc.</div>
+                                    </div>
+                                    <div style="display: flex; gap: 1.5rem; margin-left: 2rem;">
+                                        <div class="metric">
+                                            <div class="metric-label">Confidence</div>
+                                            <div class="metric-value" style="color: #F59E0B;">78%</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Sentiment</div>
+                                            <div class="metric-value" style="color: #EF4444;">-0.3</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Risk</div>
+                                            <div class="metric-value"><span class="badge badge-medium">Medium</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="price-change price-negative" style="font-size: 1.5rem;">-$234.12</div>
+                                <div style="color: #9CA3AF; font-size: 0.875rem;">-1.2%</div>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <div>
+                                        <div class="stock-symbol" style="font-size: 1.25rem; margin-bottom: 0.25rem;">TSLA</div>
+                                        <div class="stock-name" style="font-size: 0.875rem;">Tesla Inc.</div>
+                                    </div>
+                                    <div style="display: flex; gap: 1.5rem; margin-left: 2rem;">
+                                        <div class="metric">
+                                            <div class="metric-label">Confidence</div>
+                                            <div class="metric-value" style="color: #F59E0B;">88%</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Sentiment</div>
+                                            <div class="metric-value" style="color: #10B981;">+1.2</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Risk</div>
+                                            <div class="metric-value"><span class="badge badge-high">High</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="price-change price-positive" style="font-size: 1.5rem;">+$2,145.67</div>
+                                <div style="color: #9CA3AF; font-size: 0.875rem;">+8.5%</div>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <div>
+                                        <div class="stock-symbol" style="font-size: 1.25rem; margin-bottom: 0.25rem;">AMZN</div>
+                                        <div class="stock-name" style="font-size: 0.875rem;">Amazon.com Inc.</div>
+                                    </div>
+                                    <div style="display: flex; gap: 1.5rem; margin-left: 2rem;">
+                                        <div class="metric">
+                                            <div class="metric-label">Confidence</div>
+                                            <div class="metric-value" style="color: #F59E0B;">81%</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Sentiment</div>
+                                            <div class="metric-value" style="color: #10B981;">+0.5</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Risk</div>
+                                            <div class="metric-value"><span class="badge badge-medium">Medium</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="price-change price-positive" style="font-size: 1.5rem;">+$567.89</div>
+                                <div style="color: #9CA3AF; font-size: 0.875rem;">+2.8%</div>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <div>
+                                        <div class="stock-symbol" style="font-size: 1.25rem; margin-bottom: 0.25rem;">NVDA</div>
+                                        <div class="stock-name" style="font-size: 0.875rem;">NVIDIA Corp.</div>
+                                    </div>
+                                    <div style="display: flex; gap: 1.5rem; margin-left: 2rem;">
+                                        <div class="metric">
+                                            <div class="metric-label">Confidence</div>
+                                            <div class="metric-value" style="color: #F59E0B;">95%</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Sentiment</div>
+                                            <div class="metric-value" style="color: #10B981;">+1.5</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Risk</div>
+                                            <div class="metric-value"><span class="badge badge-high">High</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="price-change price-positive" style="font-size: 1.5rem;">+$3,421.45</div>
+                                <div style="color: #9CA3AF; font-size: 0.875rem;">+12.3%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 4: Sidebar Navigation -->
+        <div class="direction-section" id="direction-4">
+            <div class="direction-header">
+                <div class="direction-name">Sidebar Navigation</div>
+                <div class="direction-personality">Traditional • Desktop-Optimized</div>
+                <div class="direction-characteristics">
+                    <div class="characteristic">
+                        <div class="characteristic-label">Layout</div>
+                        <div class="characteristic-value">Two-column</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Density</div>
+                        <div class="characteristic-value">Balanced</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Navigation</div>
+                        <div class="characteristic-value">Left sidebar</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Focus</div>
+                        <div class="characteristic-value">Portfolio centered</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mockup-container">
+                <div class="mockup-viewport">
+                    <div class="two-column">
+                        <div class="sidebar">
+                            <div style="margin-bottom: 2rem;">
+                                <div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 2rem;">TradeLens</div>
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <a href="#" style="color: #ffffff; padding: 0.75rem; background: #1E3A8A; border-radius: 6px; text-decoration: none;">Portfolio</a>
+                                    <a href="#" style="color: #9CA3AF; padding: 0.75rem; border-radius: 6px; text-decoration: none;">Historical</a>
+                                    <a href="#" style="color: #9CA3AF; padding: 0.75rem; border-radius: 6px; text-decoration: none;">Profile</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="main-content">
+                            <div style="margin-bottom: 2rem;">
+                                <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">My Portfolio</h2>
+                                <input type="text" class="search-bar" placeholder="Search stocks..." style="width: 100%; max-width: 400px;">
+                            </div>
+                            <div class="grid-layout" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+                                <div class="portfolio-card">
+                                    <div class="stock-symbol">AAPL</div>
+                                    <div class="stock-name">Apple Inc.</div>
+                                    <div class="price-change price-positive">+$1,234.56</div>
+                                    <div style="color: #9CA3AF; margin-bottom: 1rem;">+5.2% today</div>
+                                    <div class="stock-metrics">
+                                        <div class="metric">
+                                            <div class="metric-label">Confidence</div>
+                                            <div class="metric-value" style="color: #F59E0B;">85%</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Sentiment</div>
+                                            <div class="metric-value" style="color: #10B981;">+0.8</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Risk</div>
+                                            <div class="metric-value"><span class="badge badge-medium">Medium</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="portfolio-card">
+                                    <div class="stock-symbol">MSFT</div>
+                                    <div class="stock-name">Microsoft Corp.</div>
+                                    <div class="price-change price-positive">+$856.32</div>
+                                    <div style="color: #9CA3AF; margin-bottom: 1rem;">+3.1% today</div>
+                                    <div class="stock-metrics">
+                                        <div class="metric">
+                                            <div class="metric-label">Confidence</div>
+                                            <div class="metric-value" style="color: #F59E0B;">92%</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Sentiment</div>
+                                            <div class="metric-value" style="color: #10B981;">+0.9</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Risk</div>
+                                            <div class="metric-value"><span class="badge badge-low">Low</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="portfolio-card">
+                                    <div class="stock-symbol">GOOGL</div>
+                                    <div class="stock-name">Alphabet Inc.</div>
+                                    <div class="price-change price-negative">-$234.12</div>
+                                    <div style="color: #9CA3AF; margin-bottom: 1rem;">-1.2% today</div>
+                                    <div class="stock-metrics">
+                                        <div class="metric">
+                                            <div class="metric-label">Confidence</div>
+                                            <div class="metric-value" style="color: #F59E0B;">78%</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Sentiment</div>
+                                            <div class="metric-value" style="color: #EF4444;">-0.3</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Risk</div>
+                                            <div class="metric-value"><span class="badge badge-medium">Medium</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="portfolio-card">
+                                    <div class="stock-symbol">TSLA</div>
+                                    <div class="stock-name">Tesla Inc.</div>
+                                    <div class="price-change price-positive">+$2,145.67</div>
+                                    <div style="color: #9CA3AF; margin-bottom: 1rem;">+8.5% today</div>
+                                    <div class="stock-metrics">
+                                        <div class="metric">
+                                            <div class="metric-label">Confidence</div>
+                                            <div class="metric-value" style="color: #F59E0B;">88%</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Sentiment</div>
+                                            <div class="metric-value" style="color: #10B981;">+1.2</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Risk</div>
+                                            <div class="metric-value"><span class="badge badge-high">High</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 5: Minimalist Focus -->
+        <div class="direction-section" id="direction-5">
+            <div class="direction-header">
+                <div class="direction-name">Minimalist Focus</div>
+                <div class="direction-personality">Ultra Clean • Maximum Breathing Room</div>
+                <div class="direction-characteristics">
+                    <div class="characteristic">
+                        <div class="characteristic-label">Layout</div>
+                        <div class="characteristic-value">Centered, spacious</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Density</div>
+                        <div class="characteristic-value">Very spacious</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Navigation</div>
+                        <div class="characteristic-value">Top tabs minimal</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Focus</div>
+                        <div class="characteristic-value">One stock at a time</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mockup-container">
+                <div class="mockup-viewport">
+                    <div class="top-nav" style="justify-content: center;">
+                        <div class="nav-links">
+                            <a href="#" class="nav-link active">Portfolio</a>
+                            <a href="#" class="nav-link">Historical</a>
+                            <a href="#" class="nav-link">Profile</a>
+                        </div>
+                    </div>
+                    <div style="max-width: 800px; margin: 0 auto; padding: 3rem 2rem;">
+                        <div class="portfolio-card" style="padding: 3rem; text-align: center;">
+                            <div class="stock-symbol" style="font-size: 3rem; margin-bottom: 1rem;">AAPL</div>
+                            <div class="stock-name" style="font-size: 1.125rem; margin-bottom: 2rem;">Apple Inc.</div>
+                            <div class="price-change price-positive" style="font-size: 2.5rem; margin-bottom: 0.5rem;">+$1,234.56</div>
+                            <div style="color: #9CA3AF; font-size: 1.125rem; margin-bottom: 3rem;">+5.2% today</div>
+                            <div style="display: flex; justify-content: center; gap: 3rem; margin-top: 3rem;">
+                                <div class="metric" style="text-align: center;">
+                                    <div class="metric-label" style="font-size: 0.875rem;">Confidence</div>
+                                    <div class="metric-value" style="font-size: 1.5rem; color: #F59E0B; margin-top: 0.5rem;">85%</div>
+                                </div>
+                                <div class="metric" style="text-align: center;">
+                                    <div class="metric-label" style="font-size: 0.875rem;">Sentiment</div>
+                                    <div class="metric-value" style="font-size: 1.5rem; color: #10B981; margin-top: 0.5rem;">+0.8</div>
+                                </div>
+                                <div class="metric" style="text-align: center;">
+                                    <div class="metric-label" style="font-size: 0.875rem;">Risk</div>
+                                    <div class="metric-value" style="margin-top: 0.5rem;"><span class="badge badge-medium">Medium</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 2rem; color: #9CA3AF;">
+                            <span style="cursor: pointer;">← Previous</span>
+                            <span style="margin: 0 2rem;">1 of 6</span>
+                            <span style="cursor: pointer;">Next →</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 6: Table View -->
+        <div class="direction-section" id="direction-6">
+            <div class="direction-header">
+                <div class="direction-name">Table View</div>
+                <div class="direction-personality">Data-Focused • Excel-Like</div>
+                <div class="direction-characteristics">
+                    <div class="characteristic">
+                        <div class="characteristic-label">Layout</div>
+                        <div class="characteristic-value">Table format</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Density</div>
+                        <div class="characteristic-value">Dense</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Navigation</div>
+                        <div class="characteristic-value">Top tabs</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Focus</div>
+                        <div class="characteristic-value">Compare all data</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mockup-container">
+                <div class="mockup-viewport">
+                    <div class="top-nav">
+                        <div class="nav-links">
+                            <a href="#" class="nav-link active">Portfolio</a>
+                            <a href="#" class="nav-link">Historical</a>
+                            <a href="#" class="nav-link">Profile</a>
+                        </div>
+                        <input type="text" class="search-bar" placeholder="Search stocks...">
+                    </div>
+                    <div style="padding: 2rem;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #2a2a2a;">
+                                    <th style="text-align: left; padding: 1rem; font-weight: 600; color: #9CA3AF;">Symbol</th>
+                                    <th style="text-align: left; padding: 1rem; font-weight: 600; color: #9CA3AF;">Name</th>
+                                    <th style="text-align: right; padding: 1rem; font-weight: 600; color: #9CA3AF;">Price Change</th>
+                                    <th style="text-align: right; padding: 1rem; font-weight: 600; color: #9CA3AF;">% Change</th>
+                                    <th style="text-align: right; padding: 1rem; font-weight: 600; color: #9CA3AF;">Confidence</th>
+                                    <th style="text-align: right; padding: 1rem; font-weight: 600; color: #9CA3AF;">Sentiment</th>
+                                    <th style="text-align: center; padding: 1rem; font-weight: 600; color: #9CA3AF;">Risk</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #2a2a2a; cursor: pointer;" class="portfolio-card" onmouseover="this.style.backgroundColor='#111111'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <td style="padding: 1rem; font-weight: 600;">AAPL</td>
+                                    <td style="padding: 1rem; color: #9CA3AF;">Apple Inc.</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981; font-weight: 600;">+$1,234.56</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981;">+5.2%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #F59E0B;">85%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981;">+0.8</td>
+                                    <td style="padding: 1rem; text-align: center;"><span class="badge badge-medium">Medium</span></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #2a2a2a; cursor: pointer;" onmouseover="this.style.backgroundColor='#111111'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <td style="padding: 1rem; font-weight: 600;">MSFT</td>
+                                    <td style="padding: 1rem; color: #9CA3AF;">Microsoft Corp.</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981; font-weight: 600;">+$856.32</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981;">+3.1%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #F59E0B;">92%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981;">+0.9</td>
+                                    <td style="padding: 1rem; text-align: center;"><span class="badge badge-low">Low</span></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #2a2a2a; cursor: pointer;" onmouseover="this.style.backgroundColor='#111111'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <td style="padding: 1rem; font-weight: 600;">GOOGL</td>
+                                    <td style="padding: 1rem; color: #9CA3AF;">Alphabet Inc.</td>
+                                    <td style="padding: 1rem; text-align: right; color: #EF4444; font-weight: 600;">-$234.12</td>
+                                    <td style="padding: 1rem; text-align: right; color: #EF4444;">-1.2%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #F59E0B;">78%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #EF4444;">-0.3</td>
+                                    <td style="padding: 1rem; text-align: center;"><span class="badge badge-medium">Medium</span></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #2a2a2a; cursor: pointer;" onmouseover="this.style.backgroundColor='#111111'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <td style="padding: 1rem; font-weight: 600;">TSLA</td>
+                                    <td style="padding: 1rem; color: #9CA3AF;">Tesla Inc.</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981; font-weight: 600;">+$2,145.67</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981;">+8.5%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #F59E0B;">88%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981;">+1.2</td>
+                                    <td style="padding: 1rem; text-align: center;"><span class="badge badge-high">High</span></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #2a2a2a; cursor: pointer;" onmouseover="this.style.backgroundColor='#111111'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <td style="padding: 1rem; font-weight: 600;">AMZN</td>
+                                    <td style="padding: 1rem; color: #9CA3AF;">Amazon.com Inc.</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981; font-weight: 600;">+$567.89</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981;">+2.8%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #F59E0B;">81%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981;">+0.5</td>
+                                    <td style="padding: 1rem; text-align: center;"><span class="badge badge-medium">Medium</span></td>
+                                </tr>
+                                <tr style="cursor: pointer;" onmouseover="this.style.backgroundColor='#111111'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <td style="padding: 1rem; font-weight: 600;">NVDA</td>
+                                    <td style="padding: 1rem; color: #9CA3AF;">NVIDIA Corp.</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981; font-weight: 600;">+$3,421.45</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981;">+12.3%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #F59E0B;">95%</td>
+                                    <td style="padding: 1rem; text-align: right; color: #10B981;">+1.5</td>
+                                    <td style="padding: 1rem; text-align: center;"><span class="badge badge-high">High</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 7: Hero + Grid -->
+        <div class="direction-section" id="direction-7">
+            <div class="direction-header">
+                <div class="direction-name">Hero + Grid</div>
+                <div class="direction-personality">Featured Focus • Prominent Highlights</div>
+                <div class="direction-characteristics">
+                    <div class="characteristic">
+                        <div class="characteristic-label">Layout</div>
+                        <div class="characteristic-value">Hero + grid below</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Density</div>
+                        <div class="characteristic-value">Balanced</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Navigation</div>
+                        <div class="characteristic-value">Top tabs</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Focus</div>
+                        <div class="characteristic-value">Featured stock</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mockup-container">
+                <div class="mockup-viewport">
+                    <div class="top-nav">
+                        <div class="nav-links">
+                            <a href="#" class="nav-link active">Portfolio</a>
+                            <a href="#" class="nav-link">Historical</a>
+                            <a href="#" class="nav-link">Profile</a>
+                        </div>
+                        <input type="text" class="search-bar" placeholder="Search stocks...">
+                    </div>
+                    <div style="padding: 2rem;">
+                        <div class="portfolio-card" style="padding: 3rem; margin-bottom: 2rem; background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%); border: 2px solid #F59E0B;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div>
+                                    <div style="font-size: 0.875rem; color: #F59E0B; margin-bottom: 0.5rem; font-weight: 600;">TOP RECOMMENDATION</div>
+                                    <div class="stock-symbol" style="font-size: 2.5rem; margin-bottom: 0.5rem;">NVDA</div>
+                                    <div class="stock-name" style="font-size: 1.25rem; margin-bottom: 1.5rem;">NVIDIA Corp.</div>
+                                    <div class="price-change price-positive" style="font-size: 2rem; margin-bottom: 0.5rem;">+$3,421.45</div>
+                                    <div style="color: #9CA3AF; font-size: 1.125rem; margin-bottom: 2rem;">+12.3% today</div>
+                                    <div style="display: flex; gap: 2rem;">
+                                        <div class="metric">
+                                            <div class="metric-label">Confidence</div>
+                                            <div class="metric-value" style="font-size: 1.5rem; color: #F59E0B;">95%</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Sentiment</div>
+                                            <div class="metric-value" style="font-size: 1.5rem; color: #10B981;">+1.5</div>
+                                        </div>
+                                        <div class="metric">
+                                            <div class="metric-label">Risk</div>
+                                            <div class="metric-value"><span class="badge badge-high">High</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem;">All Stocks</h3>
+                        <div class="grid-layout" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+                            <div class="portfolio-card" style="padding: 1.25rem;">
+                                <div class="stock-symbol" style="font-size: 1.25rem;">AAPL</div>
+                                <div class="stock-name" style="font-size: 0.875rem;">Apple Inc.</div>
+                                <div class="price-change price-positive" style="font-size: 1.125rem;">+5.2%</div>
+                                <div style="margin-top: 0.75rem; display: flex; gap: 0.75rem;">
+                                    <span class="badge badge-medium" style="font-size: 0.7rem;">Conf: 85%</span>
+                                    <span class="badge badge-medium" style="font-size: 0.7rem;">Med Risk</span>
+                                </div>
+                            </div>
+                            <div class="portfolio-card" style="padding: 1.25rem;">
+                                <div class="stock-symbol" style="font-size: 1.25rem;">MSFT</div>
+                                <div class="stock-name" style="font-size: 0.875rem;">Microsoft Corp.</div>
+                                <div class="price-change price-positive" style="font-size: 1.125rem;">+3.1%</div>
+                                <div style="margin-top: 0.75rem; display: flex; gap: 0.75rem;">
+                                    <span class="badge badge-medium" style="font-size: 0.7rem;">Conf: 92%</span>
+                                    <span class="badge badge-low" style="font-size: 0.7rem;">Low Risk</span>
+                                </div>
+                            </div>
+                            <div class="portfolio-card" style="padding: 1.25rem;">
+                                <div class="stock-symbol" style="font-size: 1.25rem;">GOOGL</div>
+                                <div class="stock-name" style="font-size: 0.875rem;">Alphabet Inc.</div>
+                                <div class="price-change price-negative" style="font-size: 1.125rem;">-1.2%</div>
+                                <div style="margin-top: 0.75rem; display: flex; gap: 0.75rem;">
+                                    <span class="badge badge-medium" style="font-size: 0.7rem;">Conf: 78%</span>
+                                    <span class="badge badge-medium" style="font-size: 0.7rem;">Med Risk</span>
+                                </div>
+                            </div>
+                            <div class="portfolio-card" style="padding: 1.25rem;">
+                                <div class="stock-symbol" style="font-size: 1.25rem;">TSLA</div>
+                                <div class="stock-name" style="font-size: 0.875rem;">Tesla Inc.</div>
+                                <div class="price-change price-positive" style="font-size: 1.125rem;">+8.5%</div>
+                                <div style="margin-top: 0.75rem; display: flex; gap: 0.75rem;">
+                                    <span class="badge badge-medium" style="font-size: 0.7rem;">Conf: 88%</span>
+                                    <span class="badge badge-high" style="font-size: 0.7rem;">High Risk</span>
+                                </div>
+                            </div>
+                            <div class="portfolio-card" style="padding: 1.25rem;">
+                                <div class="stock-symbol" style="font-size: 1.25rem;">AMZN</div>
+                                <div class="stock-name" style="font-size: 0.875rem;">Amazon.com Inc.</div>
+                                <div class="price-change price-positive" style="font-size: 1.125rem;">+2.8%</div>
+                                <div style="margin-top: 0.75rem; display: flex; gap: 0.75rem;">
+                                    <span class="badge badge-medium" style="font-size: 0.7rem;">Conf: 81%</span>
+                                    <span class="badge badge-medium" style="font-size: 0.7rem;">Med Risk</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 8: Compact Cards -->
+        <div class="direction-section" id="direction-8">
+            <div class="direction-header">
+                <div class="direction-name">Compact Cards</div>
+                <div class="direction-personality">Efficient • Space-Optimized</div>
+                <div class="direction-characteristics">
+                    <div class="characteristic">
+                        <div class="characteristic-label">Layout</div>
+                        <div class="characteristic-value">Small cards, many visible</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Density</div>
+                        <div class="characteristic-value">Compact</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Navigation</div>
+                        <div class="characteristic-value">Top tabs</div>
+                    </div>
+                    <div class="characteristic">
+                        <div class="characteristic-label">Focus</div>
+                        <div class="characteristic-value">See more at once</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mockup-container">
+                <div class="mockup-viewport">
+                    <div class="top-nav">
+                        <div class="nav-links">
+                            <a href="#" class="nav-link active">Portfolio</a>
+                            <a href="#" class="nav-link">Historical</a>
+                            <a href="#" class="nav-link">Profile</a>
+                        </div>
+                        <input type="text" class="search-bar" placeholder="Search stocks...">
+                    </div>
+                    <div class="grid-layout" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; padding: 2rem;">
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div class="stock-symbol" style="font-size: 1.125rem; margin-bottom: 0.25rem;">AAPL</div>
+                            <div class="stock-name" style="font-size: 0.75rem; margin-bottom: 0.75rem;">Apple Inc.</div>
+                            <div class="price-change price-positive" style="font-size: 1rem; margin-bottom: 0.5rem;">+5.2%</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem;">
+                                <span class="badge badge-medium" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">85%</span>
+                                <span class="badge badge-medium" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">Med</span>
+                            </div>
+                        </div>
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div class="stock-symbol" style="font-size: 1.125rem; margin-bottom: 0.25rem;">MSFT</div>
+                            <div class="stock-name" style="font-size: 0.75rem; margin-bottom: 0.75rem;">Microsoft</div>
+                            <div class="price-change price-positive" style="font-size: 1rem; margin-bottom: 0.5rem;">+3.1%</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem;">
+                                <span class="badge badge-medium" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">92%</span>
+                                <span class="badge badge-low" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">Low</span>
+                            </div>
+                        </div>
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div class="stock-symbol" style="font-size: 1.125rem; margin-bottom: 0.25rem;">GOOGL</div>
+                            <div class="stock-name" style="font-size: 0.75rem; margin-bottom: 0.75rem;">Alphabet</div>
+                            <div class="price-change price-negative" style="font-size: 1rem; margin-bottom: 0.5rem;">-1.2%</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem;">
+                                <span class="badge badge-medium" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">78%</span>
+                                <span class="badge badge-medium" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">Med</span>
+                            </div>
+                        </div>
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div class="stock-symbol" style="font-size: 1.125rem; margin-bottom: 0.25rem;">TSLA</div>
+                            <div class="stock-name" style="font-size: 0.75rem; margin-bottom: 0.75rem;">Tesla</div>
+                            <div class="price-change price-positive" style="font-size: 1rem; margin-bottom: 0.5rem;">+8.5%</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem;">
+                                <span class="badge badge-medium" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">88%</span>
+                                <span class="badge badge-high" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">High</span>
+                            </div>
+                        </div>
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div class="stock-symbol" style="font-size: 1.125rem; margin-bottom: 0.25rem;">AMZN</div>
+                            <div class="stock-name" style="font-size: 0.75rem; margin-bottom: 0.75rem;">Amazon</div>
+                            <div class="price-change price-positive" style="font-size: 1rem; margin-bottom: 0.5rem;">+2.8%</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem;">
+                                <span class="badge badge-medium" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">81%</span>
+                                <span class="badge badge-medium" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">Med</span>
+                            </div>
+                        </div>
+                        <div class="portfolio-card" style="padding: 1rem;">
+                            <div class="stock-symbol" style="font-size: 1.125rem; margin-bottom: 0.25rem;">NVDA</div>
+                            <div class="stock-name" style="font-size: 0.75rem; margin-bottom: 0.75rem;">NVIDIA</div>
+                            <div class="price-change price-positive" style="font-size: 1rem; margin-bottom: 0.5rem;">+12.3%</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem;">
+                                <span class="badge badge-medium" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">95%</span>
+                                <span class="badge badge-high" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">High</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showDirection(num) {
+            // Hide all directions
+            document.querySelectorAll('.direction-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active from all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected direction
+            document.getElementById(`direction-${num}`).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
+

@@ -25,7 +25,11 @@ SOURCE_FUNCS = [collect_marketwatch_sentiment, collect_seekingalpha_sentiment]
 
 
 def _normalize_timestamp_minute(ts: datetime) -> datetime:
-    return ts.replace(second=0, microsecond=0)
+    """Normalize timestamp to minute precision and convert to timezone-naive UTC."""
+    # Convert to UTC if timezone-aware, then make naive
+    if ts.tzinfo is not None:
+        ts = ts.astimezone(timezone.utc)
+    return ts.replace(second=0, microsecond=0, tzinfo=None)
 
 
 async def _collect_for_symbol(symbol: str) -> list[dict]:
@@ -69,7 +73,11 @@ async def collect_sentiment_for_stocks(
             persisted_any = False
             for src in rec:
                 try:
-                    ts_norm = _normalize_timestamp_minute(src["timestamp"]) if src.get("timestamp") else datetime.now(timezone.utc).replace(second=0, microsecond=0)
+                    if src.get("timestamp"):
+                        ts_norm = _normalize_timestamp_minute(src["timestamp"])
+                    else:
+                        # Create timezone-naive UTC timestamp
+                        ts_norm = datetime.now(timezone.utc).replace(second=0, microsecond=0, tzinfo=None)
                     # Use upsert for idempotency (handles duplicates gracefully)
                     await upsert_sentiment_data(
                         session=session,
@@ -91,7 +99,11 @@ async def collect_sentiment_for_stocks(
                 ts_candidates = [
                     _normalize_timestamp_minute(src["timestamp"]) for src in rec if src.get("timestamp")
                 ]
-                ts = max(ts_candidates) if ts_candidates else datetime.now(timezone.utc).replace(second=0, microsecond=0)
+                if ts_candidates:
+                    ts = max(ts_candidates)
+                else:
+                    # Create timezone-naive UTC timestamp
+                    ts = datetime.now(timezone.utc).replace(second=0, microsecond=0, tzinfo=None)
                 # Use upsert for idempotency (handles duplicates gracefully)
                 await upsert_sentiment_data(
                     session=session,

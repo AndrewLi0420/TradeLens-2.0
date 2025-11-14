@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>2</storyId>
+    <title>Recommendation Detail View</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-27</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/3-2-recommendation-detail-view.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user</asA>
+    <iWant>to click on a recommendation to see detailed explanation with transparent data sources</iWant>
+    <soThat>I can understand why the recommendation was made</soThat>
+    <tasks>
+      <task>Create RecommendationDetail page component with React Router integration</task>
+      <task>Create useRecommendationDetail hook with React Query</task>
+      <task>Create RecommendationDetailContent component displaying full stock info, signal, explanation</task>
+      <task>Create EducationalTooltip component using shadcn/ui Popover</task>
+      <task>Implement backend GET /recommendations/{id} endpoint with tier enforcement</task>
+      <task>Update RecommendationRead schema to include all required fields</task>
+      <task>Add navigation from Dashboard to Detail view</task>
+      <task>Apply styling and responsive design</task>
+      <task>Implement comprehensive testing (unit, integration, E2E)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Clicking recommendation opens detail view/modal</criterion>
+    <criterion id="2">Detail view shows: full stock info, prediction signal, detailed explanation</criterion>
+    <criterion id="3">Explanation includes: sentiment analysis results, ML model signals, risk factors</criterion>
+    <criterion id="4">Transparent data display: data sources shown (Twitter, news sources), timestamps displayed</criterion>
+    <criterion id="5">Confidence score explained (based on R², model performance)</criterion>
+    <criterion id="6">Educational context provided (what signals mean, why they matter)</criterion>
+    <criterion id="7">Back/navigation to return to dashboard</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>dist/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Recommendations &amp; Dashboard</title>
+        <section>Story 3.2: Recommendation Detail View</section>
+        <snippet>Detail view shows: full stock info, prediction signal, detailed explanation. Explanation includes: sentiment analysis results, ML model signals, risk factors. Transparent data display: data sources shown (Twitter, news sources), timestamps displayed.</snippet>
+      </doc>
+      <doc>
+        <path>dist/epics.md</path>
+        <title>OpenAlpha - Epic Breakdown</title>
+        <section>Story 3.2: Recommendation Detail View</section>
+        <snippet>As a user, I want to click on a recommendation to see detailed explanation with transparent data sources, so that I can understand why the recommendation was made.</snippet>
+      </doc>
+      <doc>
+        <path>dist/PRD.md</path>
+        <title>OpenAlpha Product Requirements Document</title>
+        <section>FR016: Recommendation Explanations</section>
+        <snippet>Each recommendation includes brief explanation of why it was made. Explanations include reference to sentiment, ML model signals, and risk factors. Explanations displayed in simple, clear format. Emphasis on transparency of data sources and reasoning.</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Epic to Architecture Mapping</section>
+        <snippet>Epic 3: Recommendations &amp; Dashboard - Backend: backend/app/api/v1/endpoints/recommendations.py, Frontend: frontend/src/pages/RecommendationDetail.tsx, frontend/src/components/recommendations/</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Pattern 3: Tier-Aware Recommendation Pre-Filtering</section>
+        <snippet>Filter recommendations at generation/retrieval time based on user's tier and tracked stocks (free tier limited to 5 stocks). Filter at API endpoint level. Use SQL JOIN to filter efficiently.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/3-1-recommendation-dashboard-list-view.md</path>
+        <title>Story 3.1: Recommendation Dashboard List View</title>
+        <section>Dev Agent Record</section>
+        <snippet>New Components Created: RecommendationCard.tsx, RecommendationList.tsx, FilterSortControls.tsx, TierStatus.tsx. React Query Hook: useRecommendations.ts hook exists with React Query configuration (5min staleTime, 10min cacheTime). shadcn/ui Setup: shadcn/ui already installed and configured with Tailwind.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>frontend/src/pages/Dashboard.tsx</path>
+        <kind>page component</kind>
+        <symbol>Dashboard</symbol>
+        <lines>14-91</lines>
+        <reason>Example of protected route page component with React Router, authentication check, and React Query integration. Follow same pattern for RecommendationDetail page.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/recommendations/RecommendationCard.tsx</path>
+        <kind>component</kind>
+        <symbol>RecommendationCard</symbol>
+        <lines>1-101</lines>
+        <reason>Existing recommendation card component. Needs onClick handler to navigate to detail view. Shows styling patterns (black background, financial blue/green accents, shadcn/ui Card/Badge components) to reuse in detail view.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/recommendations/RecommendationList.tsx</path>
+        <kind>component</kind>
+        <symbol>RecommendationList</symbol>
+        <lines>4-38</lines>
+        <reason>List component with onRecommendationClick prop pattern. Shows how to handle recommendation click events for navigation.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/hooks/useRecommendations.ts</path>
+        <kind>hook</kind>
+        <symbol>useRecommendations</symbol>
+        <lines>1-35</lines>
+        <reason>React Query hook pattern for fetching recommendations list. Use as template for useRecommendationDetail hook. Shows React Query configuration: staleTime 5 minutes, cacheTime 10 minutes, refetch on window focus.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/services/recommendations.ts</path>
+        <kind>service</kind>
+        <symbol>getRecommendations</symbol>
+        <lines>35-68</lines>
+        <reason>API service function for fetching recommendations. Create similar function getRecommendationDetail(id) for single recommendation endpoint.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/api/v1/endpoints/recommendations.py</path>
+        <kind>endpoint</kind>
+        <symbol>list_recommendations</symbol>
+        <lines>23-55</lines>
+        <reason>Existing GET /api/v1/recommendations endpoint with tier-aware filtering. Follow same pattern for GET /recommendations/{id} endpoint: authentication, tier enforcement, error handling.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/crud/recommendations.py</path>
+        <kind>crud</kind>
+        <symbol>get_recommendations</symbol>
+        <lines>18-83</lines>
+        <reason>Tier-aware filtering logic for recommendations. Create similar function get_recommendation_by_id with tier check. Shows pattern: get_user_tier, check user_stock_tracking table for free tier users, eager load stock relationship.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/schemas/recommendation.py</path>
+        <kind>schema</kind>
+        <symbol>RecommendationRead</symbol>
+        <lines>35-43</lines>
+        <reason>RecommendationRead schema already includes id, stock (StockRead), signal, confidence_score, sentiment_score, risk_level, explanation, created_at. Verify all fields needed for detail view are present.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/App.tsx</path>
+        <kind>routing</kind>
+        <symbol>App</symbol>
+        <lines>1-57</lines>
+        <reason>React Router configuration. Add route /recommendations/:id for RecommendationDetail page. Shows pattern: ProtectedRoute wrapper, Layout wrapper.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/services/tier_service.py</path>
+        <kind>service</kind>
+        <symbol>get_user_tier</symbol>
+        <lines>14-27</lines>
+        <reason>Service function to get user tier. Used in tier enforcement logic for detail endpoint.</reason>
+      </artifact>
+    </code>
+    <interfaces>
+      <interface>
+        <name>GET /api/v1/recommendations/{id}</name>
+        <kind>REST endpoint</kind>
+        <signature>GET /api/v1/recommendations/{id}
+Headers: Authorization: Bearer {token} (required)
+Path Params: id (recommendation UUID)
+Response 200: Full recommendation object with detailed explanation
+Response 401: Unauthorized if token invalid
+Response 403: Forbidden if free tier user tries to access untracked stock recommendation
+Response 404: Recommendation not found or not accessible to user</signature>
+        <path>backend/app/api/v1/endpoints/recommendations.py</path>
+      </interface>
+      <interface>
+        <name>RecommendationRead</name>
+        <kind>Pydantic schema</kind>
+        <signature>class RecommendationRead(RecommendationBase):
+    id: UUID
+    sentiment_score: float | None
+    created_at: datetime
+    stock: StockRead  # Include stock information</signature>
+        <path>backend/app/schemas/recommendation.py</path>
+      </interface>
+      <interface>
+        <name>useRecommendationDetail</name>
+        <kind>React hook</kind>
+        <signature>function useRecommendationDetail(id: string): {
+  data: Recommendation | undefined,
+  isLoading: boolean,
+  isError: boolean,
+  error: Error | null,
+  refetch: () =&gt; void
+}</signature>
+        <path>frontend/src/hooks/useRecommendationDetail.ts</path>
+      </interface>
+      <interface>
+        <name>RecommendationDetailContent</name>
+        <kind>React component</kind>
+        <signature>interface RecommendationDetailContentProps {
+  recommendation: Recommendation
+}
+
+export default function RecommendationDetailContent({ recommendation }: RecommendationDetailContentProps)</signature>
+        <path>frontend/src/components/recommendations/RecommendationDetailContent.tsx</path>
+      </interface>
+      <interface>
+        <name>EducationalTooltip</name>
+        <kind>React component</kind>
+        <signature>interface EducationalTooltipProps {
+  trigger: React.ReactNode,
+  content: string,
+  placement?: 'top' | 'bottom' | 'left' | 'right'
+}
+
+export default function EducationalTooltip({ trigger, content, placement }: EducationalTooltipProps)</signature>
+        <path>frontend/src/components/common/EducationalTooltip.tsx</path>
+      </interface>
+    </interfaces>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="react-router-dom" version="^6.30.1" />
+        <package name="@tanstack/react-query" version="^5.90.6" />
+        <package name="axios" version="^1.13.1" />
+        <package name="@radix-ui/react-select" version="^2.2.6" />
+        <package name="lucide-react" version="^0.552.0" />
+        <package name="tailwindcss" version="^4.1.16" />
+        <package name="vitest" version="^3.2.4" />
+        <package name="@testing-library/react" version="^16.3.0" />
+        <package name="@playwright/test" version="^1.56.1" />
+      </ecosystem>
+      <ecosystem name="python">
+        <package name="fastapi" version="^0.109.2" />
+        <package name="sqlalchemy" version="&gt;=2.0.0,&lt;3.0.0" />
+        <package name="pydantic" version="^1.10.6" />
+        <package name="pytest" version="&gt;=7.2.2" />
+        <package name="pytest-asyncio" version="&gt;=0.21.0" />
+        <package name="httpx" version="&gt;=0.27.0" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Use React Query 5.x for server state management and caching (staleTime 5 minutes, cacheTime 10 minutes)</constraint>
+    <constraint>Follow existing recommendation API patterns from Story 3-1: same authentication, tier enforcement, error handling</constraint>
+    <constraint>Use shadcn/ui component library (Card, Popover for tooltips, Badge) as specified in tech spec Epic 3 dependencies</constraint>
+    <constraint>Apply Tailwind CSS styling with black background and financial blue/green accents per UX Design Specification</constraint>
+    <constraint>Follow project structure patterns: frontend/src/pages/RecommendationDetail.tsx, frontend/src/components/recommendations/RecommendationDetailContent.tsx, frontend/src/components/common/EducationalTooltip.tsx</constraint>
+    <constraint>Backend tier enforcement: Verify free tier users can only access recommendations for tracked stocks, premium users can access all, per Pattern 3 (Tier-Aware Recommendation Pre-Filtering)</constraint>
+    <constraint>Explanation field: Recommendation.explanation already populated by Story 2-8, display this field directly - do not regenerate explanations</constraint>
+    <constraint>Educational tooltips: Use shadcn/ui Popover component, trigger on hover (desktop) or click (mobile)</constraint>
+    <constraint>API endpoint must validate user authentication via dependency injection</constraint>
+    <constraint>API endpoint must return 404 if recommendation not found, 403 if free tier user tries to access untracked stock recommendation</constraint>
+    <constraint>React Router route must be protected with ProtectedRoute component and wrapped in Layout component</constraint>
+    <constraint>Detail view must be responsive (works on mobile 375px, 414px widths)</constraint>
+  </constraints>
+
+  <tests>
+    <standards>Frontend unit tests use Vitest with React Testing Library. Backend tests use pytest with pytest-asyncio for async endpoints. E2E tests use Playwright. Test files co-located with components (frontend) or in tests/ directory (backend). Follow existing test patterns from Story 3-1 tests.</standards>
+    <locations>
+      <location>frontend/src/components/recommendations/__tests__/</location>
+      <location>frontend/src/pages/__tests__/</location>
+      <location>frontend/tests/e2e/</location>
+      <location>backend/tests/test_api/</location>
+      <location>backend/tests/test_crud/</location>
+    </locations>
+    <ideas>
+      <idea criterion="1">Unit test: RecommendationDetail page component renders, extracts ID from route params, redirects to login if not authenticated</idea>
+      <idea criterion="1">E2E test: Navigate from dashboard to detail view by clicking recommendation card</idea>
+      <idea criterion="2">Unit test: RecommendationDetailContent component displays all required fields (stock info, signal, explanation)</idea>
+      <idea criterion="2">Integration test: GET /api/v1/recommendations/{id} returns correct recommendation data with stock relationship</idea>
+      <idea criterion="3">Unit test: RecommendationDetailContent displays sentiment analysis results, ML model signals, risk factors</idea>
+      <idea criterion="4">Unit test: RecommendationDetailContent displays data sources with timestamps</idea>
+      <idea criterion="5">Unit test: EducationalTooltip displays confidence score explanation with R² information</idea>
+      <idea criterion="5">Unit test: EducationalTooltip appears on hover (desktop) or click (mobile)</idea>
+      <idea criterion="6">Unit test: EducationalTooltip explains concepts in simple, non-technical language</idea>
+      <idea criterion="7">E2E test: Back button navigates from detail view to dashboard</idea>
+      <idea criterion="7">Unit test: RecommendationDetail page has back/navigation button</idea>
+      <idea>Integration test: Free tier user cannot access untracked stock recommendation (403 response)</idea>
+      <idea>Integration test: Premium user can access any recommendation</idea>
+      <idea>Integration test: GET /api/v1/recommendations/{id} returns 404 if recommendation not found</idea>
+      <idea>Unit test: useRecommendationDetail hook fetches data, handles errors (404, 403, network errors)</idea>
+      <idea>E2E test: Detail view displays all required information (stock, signal, explanation, data sources)</idea>
+      <idea>E2E test: Tooltips appear on hover/click, display educational content</idea>
+      <idea>Unit test: RecommendationCard onClick handler navigates to detail view</idea>
+    </ideas>
+  </tests>
+</story-context>
+
+

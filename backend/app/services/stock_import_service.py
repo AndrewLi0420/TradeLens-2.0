@@ -1,4 +1,4 @@
-"""Stock import service for Fortune 500 stocks"""
+"""Stock import service for S&P 500 stocks"""
 from __future__ import annotations
 
 import csv
@@ -21,8 +21,9 @@ async def import_stocks_from_csv(
     """
     Import stocks from CSV file.
     
-    CSV format expected:
-    symbol,company_name,sector,fortune_500_rank
+    CSV format expected (supports both formats):
+    - symbol,company_name,sector,fortune_500_rank (lowercase)
+    - Symbol,Name,Sector (capitalized, S&P 500 format)
     
     Returns dict with import statistics:
     - imported: count of stocks imported
@@ -44,13 +45,17 @@ async def import_stocks_from_csv(
     try:
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or []
             
-            # Verify required columns
-            required_columns = {"symbol", "company_name"}
-            if not required_columns.issubset(reader.fieldnames or []):
+            # Normalize column names (handle both lowercase and capitalized formats)
+            # Check for required columns in either format
+            has_symbol = "symbol" in fieldnames or "Symbol" in fieldnames
+            has_company_name = "company_name" in fieldnames or "Name" in fieldnames
+            
+            if not has_symbol or not has_company_name:
                 raise ValueError(
-                    f"CSV missing required columns: {required_columns}. "
-                    f"Found columns: {reader.fieldnames}"
+                    f"CSV missing required columns. Need 'symbol'/'Symbol' and 'company_name'/'Name'. "
+                    f"Found columns: {fieldnames}"
                 )
             
             # Process each row
@@ -58,9 +63,9 @@ async def import_stocks_from_csv(
                 stats["total_rows"] += 1
                 
                 try:
-                    # Extract and validate data
-                    symbol = row.get("symbol", "").strip().upper()
-                    company_name = row.get("company_name", "").strip()
+                    # Extract and validate data (handle both column name formats)
+                    symbol = (row.get("symbol") or row.get("Symbol") or "").strip().upper()
+                    company_name = (row.get("company_name") or row.get("Name") or "").strip()
                     
                     if not symbol or not company_name:
                         logger.warning(
@@ -69,9 +74,9 @@ async def import_stocks_from_csv(
                         stats["errors"] += 1
                         continue
                     
-                    # Optional fields
-                    sector = row.get("sector", "").strip() or None
-                    fortune_500_rank_str = row.get("fortune_500_rank", "").strip()
+                    # Optional fields (handle both formats)
+                    sector = (row.get("sector") or row.get("Sector") or "").strip() or None
+                    fortune_500_rank_str = (row.get("fortune_500_rank") or row.get("Fortune_500_rank") or "").strip()
                     
                     fortune_500_rank = None
                     if fortune_500_rank_str:
@@ -131,14 +136,14 @@ async def import_fortune_500_stocks(
     csv_path: str | Path | None = None,
 ) -> dict[str, int]:
     """
-    Import Fortune 500 stocks from default CSV location.
+    Import S&P 500 stocks from default CSV location.
     
-    Default CSV path: backend/data/fortune_500_stocks.csv
+    Default CSV path: backend/data/SP500.csv
     """
     if csv_path is None:
         # Use default path relative to project root
         root_dir = Path(settings.PATHS.ROOT_DIR)
-        csv_path = root_dir / "data" / "fortune_500_stocks.csv"
+        csv_path = root_dir / "data" / "SP500.csv"
     
     return await import_stocks_from_csv(session, csv_path)
 

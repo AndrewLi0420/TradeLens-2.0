@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>1</storyId>
+    <title>Recommendation Dashboard List View</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-06T07:07:14Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/3-1-recommendation-dashboard-list-view.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>logged-in user</asA>
+    <iWant>to see current recommendations displayed in a list format on the dashboard</iWant>
+    <soThat>I can quickly scan and identify actionable recommendations</soThat>
+    <tasks>
+      <task id="dashboard-page">Create Dashboard page component (AC: 1, 2, 5, 6, 7, 8)</task>
+      <task id="recommendation-list">Create RecommendationList component (AC: 1, 2)</task>
+      <task id="recommendation-card">Create RecommendationCard component (AC: 2)</task>
+      <task id="filtering">Implement filtering functionality (AC: 4, 5)</task>
+      <task id="sorting">Implement sorting functionality (AC: 3)</task>
+      <task id="use-recommendations-hook">Create useRecommendations hook (AC: 1, 4, 5, 6)</task>
+      <task id="tier-filtering-backend">Implement tier-aware filtering backend (AC: 5)</task>
+      <task id="tier-status-component">Create TierStatus component (AC: 5)</task>
+      <task id="shadcn-setup">Install and configure shadcn/ui (AC: 1, 2, 4)</task>
+      <task id="testing">Testing (unit, integration, E2E, performance)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1">Dashboard page displays recommendations in list format</ac>
+    <ac id="2">Each recommendation shows: stock symbol, company name, signal (buy/sell/hold), confidence score, sentiment score, risk level</ac>
+    <ac id="3">List is sortable by: date, confidence, risk, sentiment</ac>
+    <ac id="4">List is filterable by: holding period, risk level, confidence threshold</ac>
+    <ac id="5">Recommendations respect user preferences (holding period, tier limits)</ac>
+    <ac id="6">List updates when new recommendations are generated</ac>
+    <ac id="7">Empty state shown when no recommendations available</ac>
+    <ac id="8">Loading state shown while fetching recommendations</ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Story 3.1: Recommendation Dashboard List View">
+        Acceptance criteria, detailed design, API contracts, workflows, and non-functional requirements for dashboard implementation.
+      </doc>
+      <doc path="dist/epics.md" title="OpenAlpha Epic Breakdown" section="Story 3.1: Recommendation Dashboard List View">
+        User story and acceptance criteria from epic breakdown document.
+      </doc>
+      <doc path="dist/PRD.md" title="OpenAlpha Product Requirements Document" section="FR015: Recommendation Dashboard">
+        Functional requirement FR015 defining dashboard requirements and user experience goals.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Epic to Architecture Mapping">
+        Epic 3 architecture mapping showing component locations: Dashboard.tsx, RecommendationList, RecommendationCard, FilterSortControls, TierStatus.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Novel Pattern Designs">
+        Pattern 3: Tier-Aware Recommendation Pre-Filtering - filter recommendations at API level based on user tier and tracked stocks.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Technology Stack Details">
+        React Query 5.x for server state management, Axios for HTTP client, Tailwind CSS 3.x for styling, shadcn/ui component library.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="API Contracts">
+        GET /api/v1/recommendations endpoint specification with query params for filtering and sorting.
+      </doc>
+      <doc path="dist/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="APIs and Interfaces">
+        Detailed API contract with query params (holding_period, risk_level, confidence_min, sort_by, sort_direction) and response format.
+      </doc>
+      <doc path="dist/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Workflows and Sequencing">
+        Dashboard Load Workflow steps: authentication check, fetch recommendations, tier filtering, preference filtering, React Query caching.
+      </doc>
+      <doc path="dist/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Non-Functional Requirements">
+        Performance targets: dashboard loads within 3 seconds, API responds within 500ms. Security: JWT authentication, tier enforcement at API level.
+      </doc>
+      <doc path="docs/stories/2-8-recommendation-generation-logic.md" title="Story 2.8: Recommendation Generation Logic" section="Dev Agent Record">
+        Learnings: Recommendation model includes sentiment_score field, ranking logic (confidence desc → sentiment desc → risk LOW first), preference-aware filtering via volatility heuristic, scheduled job runs hourly.
+      </doc>
+    </docs>
+    <code>
+      <file path="frontend/src/pages/Dashboard.tsx" kind="page" symbol="Dashboard" lines="1-28" reason="Existing Dashboard page component - needs to be extended with recommendations list, filtering, and sorting functionality" />
+      <file path="frontend/src/hooks/useAuth.ts" kind="hook" symbol="useAuth" lines="1-75" reason="Authentication hook - use for protected route and user context. Returns user, isAuthenticated, isLoading. Already integrated with React Query." />
+      <file path="frontend/src/components/common/ProtectedRoute.tsx" kind="component" symbol="ProtectedRoute" lines="5-34" reason="Protected route wrapper - use to protect Dashboard route, redirects to login if not authenticated" />
+      <file path="frontend/src/services/api.ts" kind="service" symbol="apiClient" lines="1-44" reason="Axios client configured with base URL and interceptors. Handles 401/403 redirects. Use for all API calls including recommendations endpoint." />
+      <file path="frontend/src/services/auth.ts" kind="service" symbol="getCurrentUser" lines="109-112" reason="Get current user endpoint - returns user with tier and preferences. Use to get user tier for tier-aware filtering." />
+      <file path="frontend/src/hooks/useTier.ts" kind="hook" symbol="useTier" lines="1-37" reason="Tier status hook - returns tier, stockCount, stockLimit, canAddMore. Use for TierStatus component to display tier information." />
+      <file path="frontend/src/services/tier.ts" kind="service" symbol="checkTierLimit" lines="18-23" reason="Tier status API call - GET /api/v1/users/me/tier-status. Returns tier status with stock count and limits." />
+      <file path="backend/app/api/v1/endpoints/recommendations.py" kind="endpoint" symbol="router" lines="1-42" reason="Recommendations API router - currently only has POST /generate endpoint. Need to add GET /recommendations endpoint with tier-aware filtering and query params." />
+      <file path="backend/app/services/recommendation_service.py" kind="service" symbol="generate_recommendations" lines="225-274" reason="Recommendation generation service - generates recommendations with ML predictions, sentiment, risk. Do not modify - only use for data retrieval." />
+      <file path="backend/app/models/recommendation.py" kind="model" symbol="Recommendation" lines="14-62" reason="Recommendation SQLAlchemy model - includes id, user_id, stock_id, signal, confidence_score, sentiment_score, risk_level, explanation, created_at. Use for querying recommendations." />
+      <file path="backend/app/models/user_stock_tracking.py" kind="model" symbol="UserStockTracking" lines="13-31" reason="User stock tracking model - tracks which stocks user follows. Use for tier-aware filtering: query user_stock_tracking table for free tier users (max 5 stocks)." />
+      <file path="backend/app/services/tier_service.py" kind="service" symbol="get_user_tier, check_tier_limit" lines="14-122" reason="Tier service - get_user_tier returns user tier (FREE/PREMIUM), check_tier_limit returns tier status with stock count and limits. Use for tier enforcement in recommendations endpoint." />
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="@tanstack/react-query" version="^5.90.6" />
+        <package name="axios" version="^1.13.1" />
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="react-router-dom" version="^6.30.1" />
+        <package name="tailwindcss" version="^4.1.16" />
+        <package name="vitest" version="^3.2.4" />
+        <package name="@playwright/test" version="^1.56.1" />
+        <package name="@testing-library/react" version="^16.3.0" />
+      </ecosystem>
+      <ecosystem name="python">
+        <package name="fastapi" version=">=0.109.2" />
+        <package name="sqlalchemy" version=">=2.0.0,<3.0.0" />
+        <package name="pydantic" version=">=1.10.6" />
+        <package name="pytest" version=">=7.2.2" />
+        <package name="pytest-asyncio" version=">=0.21.0" />
+      </ecosystem>
+      <note>shadcn/ui component library needs to be installed: run `npx shadcn-ui@latest init` in frontend directory. Required components: Button, Card, Input, Select, Popover, Badge, Table.</note>
+    </dependencies>
+  </artifacts>
+
+  <interfaces>
+    <interface name="GET /api/v1/recommendations" kind="REST endpoint" signature="GET /api/v1/recommendations?holding_period={daily|weekly|monthly}&amp;risk_level={low|medium|high}&amp;confidence_min={0.0-1.0}&amp;sort_by={date|confidence|risk|sentiment}&amp;sort_direction={asc|desc}" path="backend/app/api/v1/endpoints/recommendations.py">
+      Returns array of recommendation objects filtered by user tier and preferences. Headers: Authorization: Bearer {token} required. Response 200: [{id, stock, signal, confidence_score, sentiment_score, risk_level, explanation, created_at}]. Filtered by tier (free: tracked stocks only, premium: all). Filtered by user preferences if query params not provided.
+    </interface>
+    <interface name="GET /api/v1/users/me" kind="REST endpoint" signature="GET /api/v1/users/me" path="frontend/src/services/auth.ts">
+      Returns current user object with tier and preferences. Used to get user tier for tier-aware filtering and user preferences for default filters.
+    </interface>
+    <interface name="GET /api/v1/users/me/tier-status" kind="REST endpoint" signature="GET /api/v1/users/me/tier-status" path="frontend/src/services/tier.ts">
+      Returns tier status: {tier, stock_count, stock_limit, can_add_more}. Used by TierStatus component to display tier information.
+    </interface>
+    <interface name="useAuth" kind="React hook" signature="useAuth(): {user, isAuthenticated, isLoading, login, logout, ...}" path="frontend/src/hooks/useAuth.ts">
+      Authentication hook managing auth state via React Query. Returns user object, isAuthenticated boolean, isLoading state, login/logout functions. Use for protected routes and user context.
+    </interface>
+    <interface name="useTier" kind="React hook" signature="useTier(): {tier, stockCount, stockLimit, canAddMore, isPremium, ...}" path="frontend/src/hooks/useTier.ts">
+      Tier status hook using React Query. Returns tier, stockCount, stockLimit, canAddMore, isPremium. Use for TierStatus component.
+    </interface>
+    <interface name="Recommendation" kind="TypeScript type" signature="interface Recommendation {id: string; stock: Stock; signal: 'buy' | 'sell' | 'hold'; confidence_score: number; sentiment_score: number; risk_level: 'low' | 'medium' | 'high'; explanation: string; created_at: string;}" path="dist/tech-spec-epic-3.md">
+      TypeScript interface for recommendation objects. Use for type safety in React components and hooks.
+    </interface>
+    <interface name="RecommendationFilters" kind="TypeScript type" signature="interface RecommendationFilters {holding_period?: 'daily' | 'weekly' | 'monthly'; risk_level?: 'low' | 'medium' | 'high'; confidence_min?: number;}" path="dist/tech-spec-epic-3.md">
+      TypeScript interface for recommendation filter query params. Use in useRecommendations hook.
+    </interface>
+    <interface name="RecommendationSort" kind="TypeScript type" signature="interface RecommendationSort {field: 'date' | 'confidence' | 'risk' | 'sentiment'; direction: 'asc' | 'desc';}" path="dist/tech-spec-epic-3.md">
+      TypeScript interface for recommendation sort query params. Use in useRecommendations hook.
+    </interface>
+  </interfaces>
+
+  <constraints>
+    <constraint>Use React Query 5.x for server state management and caching. Configure staleTime: 5 minutes, cacheTime: 10 minutes, refetch on window focus. Per architecture.md Technology Stack Details.</constraint>
+    <constraint>Follow Tier-Aware Recommendation Pre-Filtering pattern (Pattern 3) from architecture.md: filter recommendations at API level based on user tier and tracked stocks. Free tier: filter by user_stock_tracking table (max 5 stocks). Premium tier: return all recommendations.</constraint>
+    <constraint>Use shadcn/ui component library for consistent UI components: Card, Button, Select, Badge. Install via `npx shadcn-ui@latest init`. Customize colors to match black background with financial blue/green accents per UX Design Specification.</constraint>
+    <constraint>Apply Tailwind CSS styling with black background and financial blue/green accents per UX Design Specification. Use utility classes for responsive design.</constraint>
+    <constraint>Follow project structure patterns from architecture.md: frontend/src/pages/Dashboard.tsx, frontend/src/components/recommendations/, frontend/src/hooks/useRecommendations.ts, backend/app/api/v1/endpoints/recommendations.py.</constraint>
+    <constraint>API endpoint must enforce tier limits at backend level (not just frontend). Validate user tier on every recommendation request. Per architecture.md Security Architecture.</constraint>
+    <constraint>Use existing Recommendation model with sentiment_score field (added in Story 2.8). Display sentiment_score in recommendation cards. Per learnings from Story 2.8.</constraint>
+    <constraint>Backend tier enforcement: Query user_stock_tracking table for free tier users, return all recommendations for premium users. Use tier_service.get_user_tier() and check_tier_limit() functions. Per Pattern 3 implementation guide.</constraint>
+    <constraint>React Query cache configuration: staleTime 5 minutes, cacheTime 10 minutes, refetch on window focus, interval refetch every 5 minutes. Per tech spec Performance Optimization Strategies.</constraint>
+    <constraint>Performance targets: Dashboard loads within 3 seconds, API responds within 500ms. Use React Query caching, database indexes, efficient queries. Per PRD NFR001 and tech spec Non-Functional Requirements.</constraint>
+    <constraint>Testing requirements: Unit tests for components and hooks, integration tests for API endpoints, E2E tests for user workflows, performance tests for load times. Use Vitest for unit tests, Playwright for E2E tests, pytest for backend tests.</constraint>
+  </constraints>
+
+  <tests>
+    <standards>
+      Frontend unit tests use Vitest with React Testing Library. Test component rendering, state management, and hook behavior. Backend unit tests use pytest with pytest-asyncio for async endpoints. Integration tests verify API contracts and database interactions. E2E tests use Playwright to test full user workflows. Performance tests verify load time targets (dashboard &lt;3s, API &lt;500ms). Test coverage targets: Frontend components 70%+, Backend API endpoints 80%+, React Query hooks 80%+.
+    </standards>
+    <locations>
+      <location>frontend/src/**/*.test.tsx</location>
+      <location>frontend/tests/e2e/**/*.ts</location>
+      <location>backend/tests/test_api/**/*.py</location>
+      <location>backend/tests/test_services/**/*.py</location>
+    </locations>
+    <ideas>
+      <test ac="1">Unit test: Dashboard component renders and displays RecommendationList when recommendations are loaded</test>
+      <test ac="2">Unit test: RecommendationCard displays all required fields: stock symbol, company name, signal, confidence score, sentiment score, risk level</test>
+      <test ac="3">Unit test: FilterSortControls updates sort state and triggers refetch with new query params</test>
+      <test ac="4">Unit test: FilterSortControls updates filter state (holding_period, risk_level, confidence_min) and triggers refetch</test>
+      <test ac="5">Integration test: GET /api/v1/recommendations filters by tier (free tier: only tracked stocks, premium: all recommendations)</test>
+      <test ac="5">Integration test: GET /api/v1/recommendations applies user preferences as default filters when query params not provided</test>
+      <test ac="6">Unit test: useRecommendations hook refetches on window focus and interval (5 minutes)</test>
+      <test ac="7">E2E test: Dashboard displays empty state message when no recommendations available</test>
+      <test ac="8">E2E test: Dashboard displays loading state (skeleton or spinner) while fetching recommendations</test>
+      <test ac="1,3,4">E2E test: User can filter and sort recommendations, results update correctly, filter state persists during session</test>
+      <test ac="5">E2E test: Free tier user sees only recommendations for tracked stocks (max 5), premium user sees all recommendations</test>
+      <test performance>Performance test: Dashboard page load time &lt;3 seconds, API response time &lt;500ms for GET /api/v1/recommendations</test>
+      <test accessibility>Accessibility test: Dashboard is keyboard navigable, screen reader compatible, WCAG AA contrast requirements met</test>
+    </ideas>
+  </tests>
+</story-context>
+
+

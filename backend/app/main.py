@@ -10,6 +10,7 @@ from sentry_sdk.integrations.redis import RedisIntegration
 
 from .api.v1.endpoints.ml import router as ml_router
 from .api.v1.endpoints.recommendations import router as recommendations_router
+from .api.v1.endpoints.search import router as search_router
 from .core.auth import get_auth_router
 from .core.config import settings, Environment
 from .db.config import register_db
@@ -45,6 +46,7 @@ def get_application() -> FastAPI:
     _app.include_router(health_check_router)
     _app.include_router(ml_router)
     _app.include_router(recommendations_router)
+    _app.include_router(search_router)
     # Configure CORS - allow localhost for dev, configured origins for prod
     cors_origins = [str(origin) for origin in settings.BACKEND_CORS_ORIGINS]
     if settings.ENVIRONMENT == Environment.dev:

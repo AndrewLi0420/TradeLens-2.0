@@ -11,55 +11,52 @@ import { test, expect } from '@playwright/test';
  */
 
 const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const API_URL = process.env.API_URL || 'http://localhost:8000';
+const API_URL = process.env.API_URL || 'http://127.0.0.1:8000';
 
 // Helper function to create a test user via API
-async function createTestUser(email: string, password: string) {
-  const response = await fetch(`${API_URL}/api/v1/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+async function createTestUser(request: any, email: string, password: string) {
+  const response = await request.post(`${API_URL}/api/v1/auth/register`, {
+    data: { email, password },
   });
   
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`Failed to create test user: ${error.detail || response.statusText}`);
+  if (!response.ok() && response.status() !== 400) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(`Failed to create test user: ${error.detail || response.statusText()}`);
   }
   
-  return await response.json();
+  return await response.json().catch(() => ({}));
 }
 
 // Helper function to login via API (returns cookies)
-async function loginUser(page: any, email: string, password: string) {
-  const formData = new URLSearchParams();
-  formData.append('username', email);
-  formData.append('password', password);
-  
-  const response = await fetch(`${API_URL}/api/v1/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: formData,
-    credentials: 'include',
+async function loginUser(page: any, request: any, email: string, password: string) {
+  const response = await request.post(`${API_URL}/api/v1/auth/login`, {
+    form: {
+      username: email,
+      password: password,
+    },
   });
   
-  if (!response.ok) {
-    throw new Error(`Login failed: ${response.statusText}`);
+  if (!response.ok()) {
+    throw new Error(`Login failed: ${response.statusText()}`);
   }
   
   // Extract cookies from Set-Cookie header and set them in the page context
-  const cookies = response.headers.get('set-cookie');
+  const cookies = await response.headers()['set-cookie'];
   if (cookies) {
-    // Parse and set cookies in browser context
-    await page.context().addCookies([
-      {
-        name: 'fastapiusersauth',
-        value: cookies.split('=')[1].split(';')[0],
-        domain: 'localhost',
-        path: '/',
-        httpOnly: true,
-        sameSite: 'Lax',
-      }
-    ]);
+    const cookieValue = Array.isArray(cookies) ? cookies[0] : cookies;
+    const authCookie = cookieValue.split(';')[0].split('=');
+    if (authCookie.length === 2) {
+      await page.context().addCookies([
+        {
+          name: authCookie[0],
+          value: authCookie[1],
+          domain: 'localhost',
+          path: '/',
+          httpOnly: true,
+          sameSite: 'Lax',
+        }
+      ]);
+    }
   }
 }
 
@@ -67,10 +64,10 @@ test.describe('Tier Enforcement E2E Tests', () => {
   const testEmail = `test-e2e-${Date.now()}@example.com`;
   const testPassword = 'TestPass123!';
   
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, request }) => {
     // Create test user
     try {
-      await createTestUser(testEmail, testPassword);
+      await createTestUser(request, testEmail, testPassword);
     } catch (error: any) {
       // User might already exist, try to login instead
       if (!error.message.includes('already exists')) {
@@ -79,7 +76,7 @@ test.describe('Tier Enforcement E2E Tests', () => {
     }
     
     // Login user
-    await loginUser(page, testEmail, testPassword);
+    await loginUser(page, request, testEmail, testPassword);
   });
 
   test('[P0] Profile page displays tier status for free tier user', async ({ page }) => {
@@ -104,7 +101,7 @@ test.describe('Tier Enforcement E2E Tests', () => {
 
   test('[P0] Profile page displays tier status for premium user', async ({ page, request }) => {
     // Given: User is logged in and upgraded to premium (via API)
-    await loginUser(page, testEmail, testPassword);
+    await loginUser(page, request, testEmail, testPassword);
     
     // Upgrade user to premium via API (requires backend admin endpoint or direct DB update)
     // For E2E testing, we'll verify the UI handles premium status correctly
@@ -127,7 +124,7 @@ test.describe('Tier Enforcement E2E Tests', () => {
 
   test('[P1] Tier status API endpoint returns correct data', async ({ page, request }) => {
     // Given: User is logged in
-    await loginUser(page, testEmail, testPassword);
+    await loginUser(page, request, testEmail, testPassword);
     
     // When: Fetching tier status via API
     const context = await page.context();
@@ -174,9 +171,9 @@ test.describe('Tier Enforcement E2E Tests', () => {
     expect(badgeText).toMatch(/Tracking \d+\/5 stocks/);
   });
 
-  test('[P2] Tier status is fetched and displayed correctly on page load', async ({ page }) => {
+  test('[P2] Tier status is fetched and displayed correctly on page load', async ({ page, request }) => {
     // Given: User is logged in
-    await loginUser(page, testEmail, testPassword);
+    await loginUser(page, request, testEmail, testPassword);
     
     // When: Navigating to profile page
     const tierStatusPromise = page.waitForResponse(

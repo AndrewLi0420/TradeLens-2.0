@@ -34,7 +34,7 @@ def migrate_db():
     """Apply database migrations"""
     import subprocess
 
-    subprocess.run(("aerich", "upgrade"))
+    subprocess.run(("alembic", "upgrade", "head"))
 
 
 @cli.command("work")
@@ -53,7 +53,7 @@ def work(mailserver: bool = typer.Option(False)):
         "PYTHONUNBUFFERED": "true",
     }
     manager.add_process("redis", "redis-server")
-    manager.add_process("server", "aerich upgrade && python manage.py run-server", env=project_env)
+    manager.add_process("server", "alembic upgrade head && python manage.py run-server", env=project_env)
     manager.add_process("worker", "python manage.py run-worker", env=project_env)
     if mailserver:
         manager.add_process("mailserver", "python manage.py run-mailserver")
@@ -242,10 +242,10 @@ def secret_key():
 
 @cli.command("import-stocks")
 def import_stocks(
-    csv_path: str = typer.Option(None, "--csv-path", help="Path to Fortune 500 CSV file"),
+    csv_path: str = typer.Option(None, "--csv-path", help="Path to S&P 500 CSV file"),
     clear: bool = typer.Option(False, "--clear", help="Clear existing stocks before importing"),
 ):
-    """Import Fortune 500 stocks from CSV file"""
+    """Import S&P 500 stocks from CSV file"""
     from app.db.config import async_session_maker, engine
     from app.services.stock_import_service import import_fortune_500_stocks, import_stocks_from_csv
     from app.services.stock_validation_service import validate_all
@@ -266,7 +266,7 @@ def import_stocks(
                     typer.secho(f"Importing stocks from: {csv_path}", fg=typer.colors.BLUE)
                     stats = await import_stocks_from_csv(session, csv_path)
                 else:
-                    typer.secho("Importing Fortune 500 stocks from default location...", fg=typer.colors.BLUE)
+                    typer.secho("Importing S&P 500 stocks from default location...", fg=typer.colors.BLUE)
                     stats = await import_fortune_500_stocks(session)
                 
                 typer.secho(

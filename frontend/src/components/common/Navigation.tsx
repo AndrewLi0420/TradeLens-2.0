@@ -35,7 +35,7 @@ export default function Navigation({ className = '', onLinkClick }: NavigationPr
               to={link.path}
               onClick={handleLinkClick}
               className={`
-                block px-4 py-2 rounded-lg transition-colors font-medium
+                block px-4 py-3 rounded-lg transition-colors font-medium text-base min-h-[44px] flex items-center
                 ${
                   isActive(link.path)
                     ? 'bg-blue-600 text-white'

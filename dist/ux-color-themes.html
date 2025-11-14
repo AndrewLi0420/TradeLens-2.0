@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeLens Color Theme Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #10B981, #3B82F6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #9CA3AF;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .theme-card {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #2a2a2a;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .theme-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .theme-card.selected {
+            border: 2px solid #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .theme-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .theme-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .theme-personality {
+            font-size: 0.875rem;
+            color: #9CA3AF;
+            font-style: italic;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .color-swatch {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .color-label {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            right: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .components-demo {
+            margin-top: 1.5rem;
+        }
+
+        .component-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .component-label {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: #000;
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 0.875rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-alpha);
+        }
+
+        .card-demo {
+            padding: 1rem;
+            border-radius: 8px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .card-content {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: var(--success-alpha);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: var(--warning-alpha);
+            color: var(--warning);
+        }
+
+        .badge-error {
+            background: var(--error-alpha);
+            color: var(--error);
+        }
+
+        .comparison-view {
+            display: none;
+            margin-top: 3rem;
+        }
+
+        .comparison-view.active {
+            display: block;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .comparison-item {
+            text-align: center;
+        }
+
+        .comparison-label {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+            margin-bottom: 0.5rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 0.75rem 1.5rem;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #2a2a2a;
+        }
+
+        .control-btn.active {
+            background: #10B981;
+            border-color: #10B981;
+        }
+
+        /* Theme 1: Dark Professional */
+        .theme-1 {
+            --bg: #000000;
+            --bg-secondary: #0a0a0a;
+            --card-bg: #111111;
+            --text: #ffffff;
+            --text-muted: #9CA3AF;
+            --primary: #1E3A8A;
+            --primary-hover: #1E40AF;
+            --primary-alpha: rgba(30, 58, 138, 0.2);
+            --secondary: #10B981;
+            --secondary-hover: #059669;
+            --success: #10B981;
+            --success-alpha: rgba(16, 185, 129, 0.2);
+            --warning: #F59E0B;
+            --warning-alpha: rgba(245, 158, 11, 0.2);
+            --error: #EF4444;
+            --error-alpha: rgba(239, 68, 68, 0.2);
+            --border: #2a2a2a;
+            --bg-input: #1a1a1a;
+        }
+
+        /* Theme 2: Modern Trust */
+        .theme-2 {
+            --bg: #0F172A;
+            --bg-secondary: #1E293B;
+            --card-bg: #1E293B;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+            --primary: #14B8A6;
+            --primary-hover: #0D9488;
+            --primary-alpha: rgba(20, 184, 166, 0.2);
+            --secondary: #06B6D4;
+            --secondary-hover: #0891B2;
+            --success: #10B981;
+            --success-alpha: rgba(16, 185, 129, 0.2);
+            --warning: #F59E0B;
+            --warning-alpha: rgba(245, 158, 11, 0.2);
+            --error: #EF4444;
+            --error-alpha: rgba(239, 68, 68, 0.2);
+            --border: #334155;
+            --bg-input: #1E293B;
+        }
+
+        /* Theme 3: Data-Driven Minimal */
+        .theme-3 {
+            --bg: #1F2937;
+            --bg-secondary: #111827;
+            --card-bg: #374151;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --primary: #10B981;
+            --primary-hover: #059669;
+            --primary-alpha: rgba(16, 185, 129, 0.2);
+            --secondary: #3B82F6;
+            --secondary-hover: #2563EB;
+            --success: #10B981;
+            --success-alpha: rgba(16, 185, 129, 0.2);
+            --warning: #F59E0B;
+            --warning-alpha: rgba(245, 158, 11, 0.2);
+            --error: #EF4444;
+            --error-alpha: rgba(239, 68, 68, 0.2);
+            --border: #4B5563;
+            --bg-input: #374151;
+        }
+
+        /* Theme 4: Premium Financial */
+        .theme-4 {
+            --bg: #0F1419;
+            --bg-secondary: #1a1f26;
+            --card-bg: #1f2937;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --primary: #F59E0B;
+            --primary-hover: #D97706;
+            --primary-alpha: rgba(245, 158, 11, 0.2);
+            --secondary: #10B981;
+            --secondary-hover: #059669;
+            --success: #10B981;
+            --success-alpha: rgba(16, 185, 129, 0.2);
+            --warning: #F59E0B;
+            --warning-alpha: rgba(245, 158, 11, 0.2);
+            --error: #EF4444;
+            --error-alpha: rgba(239, 68, 68, 0.2);
+            --border: #374151;
+            --bg-input: #1f2937;
+        }
+
+        /* Theme 5: Vibrant Efficiency */
+        .theme-5 {
+            --bg: #111827;
+            --bg-secondary: #1F2937;
+            --card-bg: #374151;
+            --text: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --primary: #34D399;
+            --primary-hover: #10B981;
+            --primary-alpha: rgba(52, 211, 153, 0.2);
+            --secondary: #60A5FA;
+            --secondary-hover: #3B82F6;
+            --success: #34D399;
+            --success-alpha: rgba(52, 211, 153, 0.2);
+            --warning: #FBBF24;
+            --warning-alpha: rgba(251, 191, 36, 0.2);
+            --error: #F87171;
+            --error-alpha: rgba(248, 113, 113, 0.2);
+            --border: #4B5563;
+            --bg-input: #374151;
+        }
+
+        .theme-card.theme-1 {
+            background: var(--bg);
+            border-color: var(--border);
+        }
+
+        .theme-card.theme-2 {
+            background: var(--bg);
+            border-color: var(--border);
+        }
+
+        .theme-card.theme-3 {
+            background: var(--bg);
+            border-color: var(--border);
+        }
+
+        .theme-card.theme-4 {
+            background: var(--bg);
+            border-color: var(--border);
+        }
+
+        .theme-card.theme-5 {
+            background: var(--bg);
+            border-color: var(--border);
+        }
+
+        .theme-description {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+            line-height: 1.6;
+        }
+
+        .best-for {
+            font-size: 0.75rem;
+            color: var(--primary);
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 TradeLens Color Theme Visualizer</h1>
+        <p class="subtitle">Explore color theme options for your quantitative trading platform. <strong>⭐ Refined Theme (Selected)</strong> combines Dark Professional with gold accents and enhanced card visibility. Click themes to select, view components, and compare side-by-side.</p>
+
+        <div class="controls">
+            <button class="control-btn active" onclick="showView('grid')">Grid View</button>
+            <button class="control-btn" onclick="showView('comparison')">Side-by-Side</button>
+        </div>
+
+        <div id="grid-view" class="theme-grid">
+            <!-- Refined Theme: Dark Professional + Gold Accents -->
+            <div class="theme-card theme-refined selected" onclick="selectTheme('refined')" style="background: #000000; border: 2px solid #F59E0B;">
+                <div class="theme-header">
+                    <div>
+                        <div class="theme-name">⭐ Refined (Selected)</div>
+                        <div class="theme-personality">Dark Professional + Gold Accents • Enhanced Cards</div>
+                    </div>
+                </div>
+                
+                <div class="color-palette">
+                    <div class="color-swatch" style="background: #000000;" title="Background">
+                        <div class="color-label">#000000</div>
+                    </div>
+                    <div class="color-swatch" style="background: #1E3A8A;" title="Primary">
+                        <div class="color-label">#1E3A8A</div>
+                    </div>
+                    <div class="color-swatch" style="background: #10B981;" title="Secondary">
+                        <div class="color-label">#10B981</div>
+                    </div>
+                    <div class="color-swatch" style="background: #F59E0B;" title="Gold Accent">
+                        <div class="color-label">#F59E0B</div>
+                    </div>
+                </div>
+
+                <div class="components-demo">
+                    <div class="component-group">
+                        <div class="component-label">Buttons</div>
+                        <div class="button-group">
+                            <button class="btn" style="background: #1E3A8A; color: white;">Primary</button>
+                            <button class="btn" style="background: #10B981; color: white;">Success</button>
+                            <button class="btn" style="background: #F59E0B; color: #000;">Gold</button>
+                        </div>
+                    </div>
+                    
+                    <div class="component-group">
+                        <div class="component-label">Enhanced Card (Pops Out)</div>
+                        <div style="padding: 1rem; border-radius: 8px; background: #111111; border: 1px solid #2a2a2a; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+                            <div style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: #ffffff;">AAPL Portfolio</div>
+                            <div style="font-size: 0.875rem; color: #9CA3AF;">+$1,234.56 • <span style="color: #10B981;">5.2% gain</span></div>
+                            <div style="margin-top: 0.5rem;">
+                                <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: rgba(245, 158, 11, 0.2); color: #F59E0B;">High Confidence</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-group">
+                        <div class="component-label">Badges</div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <span class="badge badge-success">High Conf</span>
+                            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #F59E0B;">Gold Accent</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="theme-description">
+                    Dark Professional base with gold accents for premium highlights. Cards enhanced with lighter background (#111111) and shadows to pop against black. Perfect for making portfolio data stand out while maintaining professional aesthetic.
+                </div>
+                <div class="best-for">Selected: Dark Professional vibe + Gold accents + Enhanced card visibility</div>
+            </div>
+
+            <!-- Theme 1: Dark Professional -->
+            <div class="theme-card theme-1" onclick="selectTheme(1)">
+                <div class="theme-header">
+                    <div>
+                        <div class="theme-name">Dark Professional</div>
+                        <div class="theme-personality">Bold • Data-Focused • Premium</div>
+                    </div>
+                </div>
+                
+                <div class="color-palette">
+                    <div class="color-swatch" style="background: #000000;" title="Background">
+                        <div class="color-label">#000000</div>
+                    </div>
+                    <div class="color-swatch" style="background: #1E3A8A;" title="Primary">
+                        <div class="color-label">#1E3A8A</div>
+                    </div>
+                    <div class="color-swatch" style="background: #10B981;" title="Secondary">
+                        <div class="color-label">#10B981</div>
+                    </div>
+                    <div class="color-swatch" style="background: #EF4444;" title="Error">
+                        <div class="color-label">#EF4444</div>
+                    </div>
+                </div>
+
+                <div class="components-demo">
+                    <div class="component-group">
+                        <div class="component-label">Buttons</div>
+                        <div class="button-group">
+                            <button class="btn btn-primary">Primary</button>
+                            <button class="btn btn-secondary">Secondary</button>
+                            <button class="btn btn-success">Success</button>
+                        </div>
+                    </div>
+                    
+                    <div class="component-group">
+                        <div class="component-label">Card</div>
+                        <div class="card-demo">
+                            <div class="card-title">AAPL Portfolio</div>
+                            <div class="card-content">+$1,234.56 • 5.2% gain</div>
+                        </div>
+                    </div>
+
+                    <div class="component-group">
+                        <div class="component-label">Badges</div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <span class="badge badge-success">High Conf</span>
+                            <span class="badge badge-warning">Medium Risk</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="theme-description">
+                    Classic financial terminal aesthetic with bold contrast. Perfect for users who want a powerful, serious tool that feels premium.
+                </div>
+                <div class="best-for">Best for: Professional traders, data-focused users</div>
+            </div>
+
+            <!-- Theme 2: Modern Trust -->
+            <div class="theme-card theme-2" onclick="selectTheme(2)">
+                <div class="theme-header">
+                    <div>
+                        <div class="theme-name">Modern Trust</div>
+                        <div class="theme-personality">Trustworthy • Modern • Approachable</div>
+                    </div>
+                </div>
+                
+                <div class="color-palette">
+                    <div class="color-swatch" style="background: #0F172A;" title="Background">
+                        <div class="color-label">#0F172A</div>
+                    </div>
+                    <div class="color-swatch" style="background: #14B8A6;" title="Primary">
+                        <div class="color-label">#14B8A6</div>
+                    </div>
+                    <div class="color-swatch" style="background: #06B6D4;" title="Secondary">
+                        <div class="color-label">#06B6D4</div>
+                    </div>
+                    <div class="color-swatch" style="background: #EF4444;" title="Error">
+                        <div class="color-label">#EF4444</div>
+                    </div>
+                </div>
+
+                <div class="components-demo">
+                    <div class="component-group">
+                        <div class="component-label">Buttons</div>
+                        <div class="button-group">
+                            <button class="btn btn-primary">Primary</button>
+                            <button class="btn btn-secondary">Secondary</button>
+                            <button class="btn btn-success">Success</button>
+                        </div>
+                    </div>
+                    
+                    <div class="component-group">
+                        <div class="component-label">Card</div>
+                        <div class="card-demo">
+                            <div class="card-title">AAPL Portfolio</div>
+                            <div class="card-content">+$1,234.56 • 5.2% gain</div>
+                        </div>
+                    </div>
+
+                    <div class="component-group">
+                        <div class="component-label">Badges</div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <span class="badge badge-success">High Conf</span>
+                            <span class="badge badge-warning">Medium Risk</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="theme-description">
+                    Navy base with teal accents creates trust while feeling modern. More approachable than pure black, perfect for building confidence.
+                </div>
+                <div class="best-for">Best for: Building trust, modern fintech appeal</div>
+            </div>
+
+            <!-- Theme 3: Data-Driven Minimal -->
+            <div class="theme-card theme-3" onclick="selectTheme(3)">
+                <div class="theme-header">
+                    <div>
+                        <div class="theme-name">Data-Driven Minimal</div>
+                        <div class="theme-personality">Clean • Analytical • Efficient</div>
+                    </div>
+                </div>
+                
+                <div class="color-palette">
+                    <div class="color-swatch" style="background: #1F2937;" title="Background">
+                        <div class="color-label">#1F2937</div>
+                    </div>
+                    <div class="color-swatch" style="background: #10B981;" title="Primary">
+                        <div class="color-label">#10B981</div>
+                    </div>
+                    <div class="color-swatch" style="background: #3B82F6;" title="Secondary">
+                        <div class="color-label">#3B82F6</div>
+                    </div>
+                    <div class="color-swatch" style="background: #EF4444;" title="Error">
+                        <div class="color-label">#EF4444</div>
+                    </div>
+                </div>
+
+                <div class="components-demo">
+                    <div class="component-group">
+                        <div class="component-label">Buttons</div>
+                        <div class="button-group">
+                            <button class="btn btn-primary">Primary</button>
+                            <button class="btn btn-secondary">Secondary</button>
+                            <button class="btn btn-success">Success</button>
+                        </div>
+                    </div>
+                    
+                    <div class="component-group">
+                        <div class="component-label">Card</div>
+                        <div class="card-demo">
+                            <div class="card-title">AAPL Portfolio</div>
+                            <div class="card-content">+$1,234.56 • 5.2% gain</div>
+                        </div>
+                    </div>
+
+                    <div class="component-group">
+                        <div class="component-label">Badges</div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <span class="badge badge-success">High Conf</span>
+                            <span class="badge badge-warning">Medium Risk</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="theme-description">
+                    Charcoal base with selective accent colors. Maximum data clarity with minimal distraction. Perfect for efficient scanning.
+                </div>
+                <div class="best-for">Best for: Data clarity, analytical workflows</div>
+            </div>
+
+            <!-- Theme 4: Premium Financial -->
+            <div class="theme-card theme-4" onclick="selectTheme(4)">
+                <div class="theme-header">
+                    <div>
+                        <div class="theme-name">Premium Financial</div>
+                        <div class="theme-personality">Premium • Sophisticated • High-Value</div>
+                    </div>
+                </div>
+                
+                <div class="color-palette">
+                    <div class="color-swatch" style="background: #0F1419;" title="Background">
+                        <div class="color-label">#0F1419</div>
+                    </div>
+                    <div class="color-swatch" style="background: #F59E0B;" title="Primary">
+                        <div class="color-label">#F59E0B</div>
+                    </div>
+                    <div class="color-swatch" style="background: #10B981;" title="Secondary">
+                        <div class="color-label">#10B981</div>
+                    </div>
+                    <div class="color-swatch" style="background: #EF4444;" title="Error">
+                        <div class="color-label">#EF4444</div>
+                    </div>
+                </div>
+
+                <div class="components-demo">
+                    <div class="component-group">
+                        <div class="component-label">Buttons</div>
+                        <div class="button-group">
+                            <button class="btn btn-primary">Primary</button>
+                            <button class="btn btn-secondary">Secondary</button>
+                            <button class="btn btn-success">Success</button>
+                        </div>
+                    </div>
+                    
+                    <div class="component-group">
+                        <div class="component-label">Card</div>
+                        <div class="card-demo">
+                            <div class="card-title">AAPL Portfolio</div>
+                            <div class="card-content">+$1,234.56 • 5.2% gain</div>
+                        </div>
+                    </div>
+
+                    <div class="component-group">
+                        <div class="component-label">Badges</div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <span class="badge badge-success">High Conf</span>
+                            <span class="badge badge-warning">Medium Risk</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="theme-description">
+                    Deep slate with gold accents conveys premium value. Traditional finance aesthetic with modern UX. Sophisticated and trustworthy.
+                </div>
+                <div class="best-for">Best for: Premium positioning, high-value perception</div>
+            </div>
+
+            <!-- Theme 5: Vibrant Efficiency -->
+            <div class="theme-card theme-5" onclick="selectTheme(5)">
+                <div class="theme-header">
+                    <div>
+                        <div class="theme-name">Vibrant Efficiency</div>
+                        <div class="theme-personality">Energetic • Clear • Informative</div>
+                    </div>
+                </div>
+                
+                <div class="color-palette">
+                    <div class="color-swatch" style="background: #111827;" title="Background">
+                        <div class="color-label">#111827</div>
+                    </div>
+                    <div class="color-swatch" style="background: #34D399;" title="Primary">
+                        <div class="color-label">#34D399</div>
+                    </div>
+                    <div class="color-swatch" style="background: #60A5FA;" title="Secondary">
+                        <div class="color-label">#60A5FA</div>
+                    </div>
+                    <div class="color-swatch" style="background: #F87171;" title="Error">
+                        <div class="color-label">#F87171</div>
+                    </div>
+                </div>
+
+                <div class="components-demo">
+                    <div class="component-group">
+                        <div class="component-label">Buttons</div>
+                        <div class="button-group">
+                            <button class="btn btn-primary">Primary</button>
+                            <button class="btn btn-secondary">Secondary</button>
+                            <button class="btn btn-success">Success</button>
+                        </div>
+                    </div>
+                    
+                    <div class="component-group">
+                        <div class="component-label">Card</div>
+                        <div class="card-demo">
+                            <div class="card-title">AAPL Portfolio</div>
+                            <div class="card-content">+$1,234.56 • 5.2% gain</div>
+                        </div>
+                    </div>
+
+                    <div class="component-group">
+                        <div class="component-label">Badges</div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <span class="badge badge-success">High Conf</span>
+                            <span class="badge badge-warning">Medium Risk</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="theme-description">
+                    Dark base with vibrant data colors. Makes information feel alive and actionable. High energy while maintaining readability.
+                </div>
+                <div class="best-for">Best for: Making data feel alive, energetic dashboards</div>
+            </div>
+        </div>
+
+        <div id="comparison-view" class="comparison-view">
+            <h2 style="margin-bottom: 1rem;">Side-by-Side Comparison</h2>
+            <div class="comparison-grid">
+                <div class="comparison-item">
+                    <div class="comparison-label">Theme 1</div>
+                    <div class="theme-card theme-1" style="height: 400px;">
+                        <div class="theme-name" style="margin-bottom: 1rem;">Dark Professional</div>
+                        <div class="components-demo">
+                            <div class="button-group" style="margin-bottom: 1rem;">
+                                <button class="btn btn-primary">Action</button>
+                            </div>
+                            <div class="card-demo">
+                                <div class="card-title">Portfolio</div>
+                                <div class="card-content">Data</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="comparison-item">
+                    <div class="comparison-label">Theme 2</div>
+                    <div class="theme-card theme-2" style="height: 400px;">
+                        <div class="theme-name" style="margin-bottom: 1rem;">Modern Trust</div>
+                        <div class="components-demo">
+                            <div class="button-group" style="margin-bottom: 1rem;">
+                                <button class="btn btn-primary">Action</button>
+                            </div>
+                            <div class="card-demo">
+                                <div class="card-title">Portfolio</div>
+                                <div class="card-content">Data</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="comparison-item">
+                    <div class="comparison-label">Theme 3</div>
+                    <div class="theme-card theme-3" style="height: 400px;">
+                        <div class="theme-name" style="margin-bottom: 1rem;">Data-Driven</div>
+                        <div class="components-demo">
+                            <div class="button-group" style="margin-bottom: 1rem;">
+                                <button class="btn btn-primary">Action</button>
+                            </div>
+                            <div class="card-demo">
+                                <div class="card-title">Portfolio</div>
+                                <div class="card-content">Data</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="comparison-item">
+                    <div class="comparison-label">Theme 4</div>
+                    <div class="theme-card theme-4" style="height: 400px;">
+                        <div class="theme-name" style="margin-bottom: 1rem;">Premium</div>
+                        <div class="components-demo">
+                            <div class="button-group" style="margin-bottom: 1rem;">
+                                <button class="btn btn-primary">Action</button>
+                            </div>
+                            <div class="card-demo">
+                                <div class="card-title">Portfolio</div>
+                                <div class="card-content">Data</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="comparison-item">
+                    <div class="comparison-label">Theme 5</div>
+                    <div class="theme-card theme-5" style="height: 400px;">
+                        <div class="theme-name" style="margin-bottom: 1rem;">Vibrant</div>
+                        <div class="components-demo">
+                            <div class="button-group" style="margin-bottom: 1rem;">
+                                <button class="btn btn-primary">Action</button>
+                            </div>
+                            <div class="card-demo">
+                                <div class="card-title">Portfolio</div>
+                                <div class="card-content">Data</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedTheme = null;
+
+        function selectTheme(themeNum) {
+            // Remove previous selection
+            document.querySelectorAll('.theme-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selection
+            event.currentTarget.classList.add('selected');
+            selectedTheme = themeNum;
+            
+            console.log(`Selected Theme ${themeNum}`);
+        }
+
+        function showView(view) {
+            const gridView = document.getElementById('grid-view');
+            const comparisonView = document.getElementById('comparison-view');
+            const buttons = document.querySelectorAll('.control-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (view === 'grid') {
+                gridView.style.display = 'grid';
+                comparisonView.classList.remove('active');
+            } else {
+                gridView.style.display = 'none';
+                comparisonView.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -37,7 +37,7 @@ workflow_status:
   # Phase 2: Planning
   prd: "dist/PRD.md"
   validate-prd: optional
-  create-design: conditional
+  create-design: "dist/ux-design-specification.md"
 
   # Phase 3: Solutioning
   create-architecture: "dist/architecture.md"

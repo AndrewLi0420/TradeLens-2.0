@@ -22,9 +22,9 @@ describe('Layout', () => {
       </QueryClientProvider>
     );
 
-    // Header should be present (via Layout component)
-    expect(screen.getByText('Open')).toBeInTheDocument();
-    expect(screen.getByText('Alpha')).toBeInTheDocument();
+    // Header should be present (via Layout component) with current branding
+    expect(screen.getByText('Trade')).toBeInTheDocument();
+    expect(screen.getByText('Lens')).toBeInTheDocument();
     expect(screen.getByText('Test Content')).toBeInTheDocument();
   });
 

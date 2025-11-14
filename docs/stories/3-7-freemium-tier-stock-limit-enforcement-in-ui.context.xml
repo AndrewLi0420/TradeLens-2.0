@@ -1,0 +1,235 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>7</storyId>
+    <title>Freemium Tier Stock Limit Enforcement in UI</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/3-7-freemium-tier-stock-limit-enforcement-in-ui.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>free tier user</asA>
+    <iWant>clear indication when I've reached my stock tracking limit and options to upgrade</iWant>
+    <soThat>I understand my limitations and can consider premium features</soThat>
+    <tasks>
+- Create TierStatus component (AC: 1, 5)
+  - Create `frontend/src/components/common/TierStatus.tsx` component
+  - Display stock count indicator: "Tracking X/5 stocks (Free tier)" or "Premium - Unlimited"
+  - Fetch user tier and tracked stock count from `GET /api/v1/users/me` endpoint
+  - Use React Query to cache user tier data
+  - Use shadcn/ui Badge component for tier status display
+  - Apply Tailwind CSS styling with financial blue/green accents
+  - Display tier status in Dashboard header or navigation area
+
+- Integrate TierStatus into Dashboard (AC: 1)
+  - Update `frontend/src/pages/Dashboard.tsx` to include TierStatus component
+  - Position TierStatus prominently in Dashboard header
+  - Ensure TierStatus updates when user tier changes
+  - Test TierStatus displays correctly for free and premium users
+
+- Create UpgradePrompt component (AC: 3, 4)
+  - Create `frontend/src/components/common/UpgradePrompt.tsx` component
+  - Display upgrade prompt when free tier limit reached
+  - List premium features clearly: "Unlimited stock tracking", "Advanced analytics", etc.
+  - Use shadcn/ui Dialog or Alert component for upgrade prompt
+  - Apply Tailwind CSS styling with financial blue/green accents
+  - Include "Upgrade to Premium" button (UI only, payment integration deferred)
+  - Make upgrade prompt dismissible but easily accessible
+
+- Implement stock limit enforcement in UI (AC: 2)
+  - Check user tier and tracked stock count before allowing stock addition
+  - Disable "Add Stock" button when free tier limit reached (5 stocks)
+  - Show upgrade prompt when user attempts to add stock beyond limit
+  - Verify backend API already enforces tier limits (Story 1.6)
+  - Ensure UI prevents stock addition attempts that would fail at API level
+
+- Display tier status in User Profile (AC: 5)
+  - Update `frontend/src/pages/Profile.tsx` to display tier status
+  - Show tier indicator: "Free tier" or "Premium tier"
+  - Display tracked stock count for free tier users
+  - Show "Unlimited" for premium tier users
+  - Use TierStatus component for consistency
+  - Add upgrade prompt link/button in Profile for free tier users
+
+- Verify recommendations respect tier limits (AC: 6)
+  - Review `backend/app/crud/recommendations.py` tier filtering logic (Story 1.6, Story 3.6)
+  - Verify free tier users only see recommendations for tracked stocks (max 5)
+  - Verify premium users see all recommendations
+  - Test tier filtering works with recommendation filtering/sorting (Story 3.6)
+  - Ensure tier filtering applied before custom filters (per Pattern 3)
+
+- Create useUserTier hook (AC: 1, 2, 3, 5)
+  - Create `frontend/src/hooks/useUserTier.ts` hook
+  - Fetch user tier and tracked stock count from `GET /api/v1/users/me`
+  - Use React Query for caching (5min staleTime, 10min cacheTime)
+  - Return user tier, tracked stock count, isLimitReached boolean
+  - Handle loading and error states
+  - Refetch when user tier changes
+
+- Testing
+  - Unit tests: TierStatus component renders correctly for free/premium users
+  - Unit tests: UpgradePrompt component displays correctly when limit reached
+  - Unit tests: useUserTier hook fetches and caches user tier data
+  - Integration tests: Dashboard displays TierStatus correctly
+  - Integration tests: Stock addition disabled when limit reached
+  - Integration tests: Upgrade prompt appears when limit reached
+  - Integration tests: Profile displays tier status correctly
+  - E2E tests: Free tier user sees stock count indicator
+  - E2E tests: Free tier user cannot add more than 5 stocks
+  - E2E tests: Upgrade prompt appears when free tier limit reached
+  - E2E tests: Premium user sees "Unlimited" tier status
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. UI shows stock count indicator: "Tracking 3/5 stocks (Free tier)"
+2. When limit reached, user cannot add more stocks
+3. Upgrade prompt shown when limit reached: "Upgrade to premium for unlimited stocks"
+4. Premium features clearly listed in upgrade prompt
+5. Tier status displayed in user profile
+6. Recommendations respect tier limits (only show stocks within limit)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="FR003: Freemium Tier Management">
+        System enforces free tier limits (tracking for limited number of stocks, e.g., 3-5). Premium tier identification and feature access control. Clear indication of tier status (free vs premium) to users.
+      </doc>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="UX Design Principles - Clarity and Transparency">
+        Tier status and limits should be clearly displayed so users understand their current tier and limitations.
+      </doc>
+      <doc path="dist/architecture.md" title="Architecture Document" section="Pattern 3: Tier-Aware Recommendation Pre-Filtering">
+        Filter recommendations at generation/retrieval time based on user's tier and tracked stocks (free tier limited to 5 stocks). Free tier users see recommendations only for tracked stocks (max 5), premium users see all recommendations.
+      </doc>
+      <doc path="dist/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Story 3.7: Freemium Tier Stock Limit Enforcement in UI">
+        Acceptance criteria and detailed design for tier enforcement in UI, including TierStatus component, UpgradePrompt component, and stock limit enforcement.
+      </doc>
+      <doc path="docs/stories/1-6-freemium-tier-enforcement.md" title="Story 1.6: Freemium Tier Enforcement" section="Dev Notes">
+        Backend tier enforcement already implemented. API endpoint `GET /api/v1/users/me` returns user tier and preferences. Tier-aware filtering pattern (Pattern 3) from architecture.md: Free tier users see recommendations only for tracked stocks (max 5), premium users see all recommendations.
+      </doc>
+      <doc path="docs/stories/3-6-recommendation-filtering-sorting.md" title="Story 3.6: Recommendation Filtering and Sorting" section="Dev Agent Record">
+        Component patterns, React Query patterns, testing patterns, and tier-aware filtering implementation from Story 3.6.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="frontend/src/components/common/TierStatus.tsx" kind="component" symbol="TierStatus" reason="Existing TierStatus component - verify it meets AC requirements or needs updates">
+        Displays user tier and stock tracking status using Badge component. Uses useTier hook to fetch tier data.
+      </artifact>
+      <artifact path="frontend/src/hooks/useTier.ts" kind="hook" symbol="useTier" reason="Existing tier hook - may need to create useUserTier hook per story tasks or verify if useTier is sufficient">
+        React Query hook for tier status management. Fetches from `/api/v1/users/me/tier-status` endpoint. Returns tier, stockCount, stockLimit, canAddMore, isPremium.
+      </artifact>
+      <artifact path="frontend/src/pages/Dashboard.tsx" kind="page" symbol="Dashboard" lines="119" reason="Dashboard already includes TierStatus component - verify positioning and functionality meets AC">
+        Dashboard component that displays TierStatus in header. Uses TierStatus component from common folder.
+      </artifact>
+      <artifact path="frontend/src/pages/Profile.tsx" kind="page" symbol="Profile" lines="94-105" reason="Profile already displays tier status - verify it meets AC requirements or needs updates">
+        Profile page displays tier status with badge showing "Free Tier - Tracking X/5 stocks" or "Premium - Unlimited". Uses useTier hook.
+      </artifact>
+      <artifact path="backend/app/services/tier_service.py" kind="service" symbol="check_tier_limit" lines="27-121" reason="Backend tier limit checking service - verify it's used correctly by frontend">
+        Checks if user can add more stocks based on tier. Returns dict with allowed, limit, remaining, stock_count. Free tier limit: 5 stocks.
+      </artifact>
+      <artifact path="backend/app/users/routes.py" kind="endpoint" symbol="get_tier_status" lines="60-73" reason="Tier status endpoint - frontend should use this or GET /api/v1/users/me">
+        GET /api/v1/users/me/tier-status endpoint returns TierStatusRead with tier, stock_count, stock_limit, can_add_more.
+      </artifact>
+      <artifact path="backend/app/crud/recommendations.py" kind="crud" symbol="get_recommendations" lines="18-125" reason="Recommendation filtering with tier enforcement - verify tier filtering works correctly">
+        Tier-aware filtering: Free tier users only see recommendations for tracked stocks (max 5), premium users see all recommendations. Uses get_user_tier and filters by UserStockTracking table.
+      </artifact>
+      <artifact path="backend/app/core/tier.py" kind="dependency" symbol="require_tier_access" lines="13-46" reason="FastAPI dependency for tier enforcement at endpoint level">
+        FastAPI dependency that checks tier limits. Raises HTTPException 403 if free tier limit reached. Returns tier check result dict for allowed users.
+      </artifact>
+      <artifact path="frontend/src/services/tier.ts" kind="service" symbol="checkTierLimit" lines="18-23" reason="Frontend tier service - verify it fetches from correct endpoint">
+        Fetches tier status from `/api/v1/users/me/tier-status` endpoint. Returns TierStatus interface with tier, stock_count, stock_limit, can_add_more.
+      </artifact>
+      <artifact path="frontend/src/components/ui/badge.tsx" kind="component" symbol="Badge" reason="shadcn/ui Badge component - use for TierStatus display">
+        shadcn/ui Badge component available for tier status display.
+      </artifact>
+      <artifact path="frontend/src/components/ui/dialog.tsx" kind="component" symbol="Dialog" reason="shadcn/ui Dialog component - use for UpgradePrompt if needed">
+        shadcn/ui Dialog component available for upgrade prompts (if not already in codebase, may need to install).
+      </artifact>
+    </code>
+    <interfaces>
+      <interface name="GET /api/v1/users/me" kind="REST endpoint" signature="GET /api/v1/users/me - Returns UserRead with tier field" path="backend/app/users/routes.py">
+        Returns user object including tier field ("free" or "premium"). Used by frontend to fetch user tier status.
+      </interface>
+      <interface name="GET /api/v1/users/me/tier-status" kind="REST endpoint" signature="GET /api/v1/users/me/tier-status - Returns TierStatusRead" path="backend/app/users/routes.py">
+        Returns TierStatusRead object with tier, stock_count, stock_limit, can_add_more. More detailed than /me endpoint for tier-specific data.
+      </interface>
+      <interface name="check_tier_limit" kind="function" signature="async def check_tier_limit(session: AsyncSession, user_id: UUID) -> dict" path="backend/app/services/tier_service.py">
+        Backend service function that checks tier limits. Returns dict with allowed, limit, remaining, stock_count, reason.
+      </interface>
+      <interface name="useTier" kind="React hook" signature="export function useTier(): { tier, stockCount, stockLimit, canAddMore, isPremium, isLoading, isError, error, refetch }" path="frontend/src/hooks/useTier.ts">
+        React Query hook for tier status. Fetches from tier-status endpoint, caches with 1min staleTime. Returns tier status data and loading/error states.
+      </interface>
+      <interface name="TierStatus component" kind="React component" signature="export default function TierStatus(): JSX.Element" path="frontend/src/components/common/TierStatus.tsx">
+        Component that displays tier status badge. Uses useTier hook and Badge component. Shows "Tracking X/5 stocks (Free tier)" or "Premium - Unlimited".
+      </interface>
+    </interfaces>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="@tanstack/react-query" version="^5.90.6" reason="React Query for server state management and caching of tier data"/>
+        <package name="@radix-ui/react-slot" version="^1.2.4" reason="shadcn/ui Badge component dependency"/>
+        <package name="class-variance-authority" version="^0.7.1" reason="shadcn/ui component styling"/>
+        <package name="tailwind-merge" version="^3.3.1" reason="Tailwind CSS utility merging for component styling"/>
+        <package name="react" version="^19.1.1" reason="React framework"/>
+        <package name="react-dom" version="^19.1.1" reason="React DOM rendering"/>
+      </ecosystem>
+      <ecosystem name="python">
+        <package name="fastapi" version="^0.109.2" reason="FastAPI framework for backend API endpoints"/>
+        <package name="sqlalchemy" reason="ORM for database queries (tier checks, user stock tracking)"/>
+        <package name="pydantic" version="^1.10.6" reason="Data validation for API request/response models"/>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Follow UX Design Principles (Clarity and Transparency) from PRD: Tier status and limits should be clearly displayed so users understand their current tier and limitations.</constraint>
+    <constraint>Backend tier enforcement already implemented in Story 1.6: `backend/app/crud/recommendations.py` filters recommendations by user tier and tracked stocks (free tier: 5 stocks max, premium: unlimited).</constraint>
+    <constraint>API endpoint `GET /api/v1/users/me` returns user tier and preferences - use this to fetch tier status for TierStatus component.</constraint>
+    <constraint>Tier-aware filtering pattern (Pattern 3) from architecture.md: Free tier users see recommendations only for tracked stocks (max 5), premium users see all recommendations.</constraint>
+    <constraint>Follow existing component patterns from Story 3.1-3.6: Use shadcn/ui components, Tailwind CSS styling, React Query for data fetching.</constraint>
+    <constraint>TierStatus component should be reusable across Dashboard, Profile, and other pages where tier status is relevant.</constraint>
+    <constraint>Upgrade prompt should be non-intrusive but easily accessible - consider using shadcn/ui Dialog or Alert component.</constraint>
+    <constraint>Payment integration is deferred (per PRD out-of-scope) - upgrade prompt is UI only, no actual payment processing required.</constraint>
+    <constraint>Recommendations already respect tier limits via backend filtering (Story 1.6, Story 3.6) - verify this works correctly and document in story.</constraint>
+    <constraint>Common components in `components/common/`, hooks in `hooks/`, pages in `pages/` - follow unified project structure.</constraint>
+    <constraint>Use React Query 5.x patterns with 5min staleTime, 10min cacheTime for user tier data caching (per Story 3.6 learnings).</constraint>
+    <constraint>Backend API already enforces tier limits at CRUD level - UI should prevent actions that would fail at API level, but backend is source of truth.</constraint>
+  </constraints>
+
+  <tests>
+    <standards>
+      Testing standards follow patterns from Story 3.6: Unit tests using Vitest and @testing-library/react, integration tests for component interactions, E2E tests using Playwright. React Query hooks tested with mocked API responses. Component tests verify rendering, props, and user interactions. E2E tests verify complete user flows including tier limit enforcement.
+    </standards>
+    <locations>
+      <location>frontend/tests/ - E2E tests using Playwright</location>
+      <location>frontend/src/**/*.test.tsx - Unit tests using Vitest</location>
+      <location>backend/tests/test_api/ - Backend API integration tests</location>
+      <location>backend/tests/test_services/ - Backend service unit tests</location>
+    </locations>
+    <ideas>
+      <test ac="1">Unit test: TierStatus component renders "Tracking X/5 stocks (Free tier)" for free tier users with correct stock count</test>
+      <test ac="1">Unit test: TierStatus component renders "Premium - Unlimited" for premium users</test>
+      <test ac="1">Unit test: TierStatus component shows loading state while fetching tier data</test>
+      <test ac="2">Integration test: "Add Stock" button is disabled when free tier user has 5 tracked stocks</test>
+      <test ac="2">Integration test: "Add Stock" button is enabled when free tier user has less than 5 tracked stocks</test>
+      <test ac="2">Integration test: "Add Stock" button is always enabled for premium users</test>
+      <test ac="3">Unit test: UpgradePrompt component displays when isLimitReached is true</test>
+      <test ac="3">Unit test: UpgradePrompt component shows "Upgrade to premium for unlimited stocks" message</test>
+      <test ac="4">Unit test: UpgradePrompt component lists premium features clearly</test>
+      <test ac="5">Integration test: Profile page displays tier status correctly for free tier users</test>
+      <test ac="5">Integration test: Profile page displays tier status correctly for premium users</test>
+      <test ac="6">Integration test: Free tier users only see recommendations for tracked stocks (max 5)</test>
+      <test ac="6">Integration test: Premium users see all recommendations regardless of tracked stocks</test>
+      <test ac="6">Integration test: Tier filtering works correctly with recommendation filtering/sorting</test>
+      <test hook="useUserTier">Unit test: useUserTier hook fetches tier data from GET /api/v1/users/me endpoint</test>
+      <test hook="useUserTier">Unit test: useUserTier hook caches tier data with 5min staleTime, 10min cacheTime</test>
+      <test hook="useUserTier">Unit test: useUserTier hook returns isLimitReached boolean correctly</test>
+      <test e2e>E2E test: Free tier user sees stock count indicator "Tracking 3/5 stocks (Free tier)" in Dashboard</test>
+      <test e2e>E2E test: Free tier user cannot add more than 5 stocks - button disabled and upgrade prompt shown</test>
+      <test e2e>E2E test: Upgrade prompt appears when free tier user attempts to add stock beyond limit</test>
+      <test e2e>E2E test: Premium user sees "Premium - Unlimited" tier status in Dashboard and Profile</test>
+    </ideas>
+  </tests>
+</story-context>
+

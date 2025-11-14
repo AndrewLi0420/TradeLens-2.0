@@ -31,3 +31,12 @@ class StockRead(StockBase):
 
     class Config:
         from_attributes = True
+
+
+class StockSearch(StockBase):
+    """Schema for stock search results with recommendation status"""
+    id: UUID
+    has_recommendation: bool = False
+
+    class Config:
+        from_attributes = True

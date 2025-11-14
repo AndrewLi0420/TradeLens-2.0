@@ -364,6 +364,7 @@ Implemented ML model training infrastructure:
 - Senior Developer Review appended (Date: 2025-11-03)
 - Fixed review findings: TensorFlow task corrected, docstring updated, integration tests documented as deferred (Date: 2025-11-03)
 - Follow-up review: All findings resolved, story APPROVED (Date: 2025-11-03)
+- Follow-up review: Missing UUID import bug identified and fixed (Date: 2025-01-31)
 
 ---
 
@@ -689,3 +690,174 @@ This follow-up review verifies that all findings from the initial review have be
 
 **APPROVE** - The story implementation is complete, all review findings have been addressed, and the code quality is excellent. The story is ready to be marked as done and can proceed to the next phase.
 
+---
+
+## Senior Developer Review (AI) - Follow-up Review
+
+### Reviewer
+Andrew
+
+### Date
+2025-01-31
+
+### Outcome
+**CHANGES REQUESTED** - Implementation is comprehensive and well-tested, but one critical runtime bug was discovered that must be fixed before production deployment.
+
+### Summary
+
+This follow-up review was requested to verify the implementation quality after the story was marked as done. The review confirms that all 7 acceptance criteria are fully implemented with comprehensive test coverage (20 unit tests). However, systematic code inspection revealed:
+
+- **1 HIGH severity finding**: Missing UUID import causing runtime error in `predict_stock()` function
+- **0 MEDIUM severity findings**
+- **0 LOW severity findings**
+
+The implementation demonstrates excellent code quality, comprehensive test coverage, and proper architectural alignment. The single critical bug is easily fixable and does not impact the core training infrastructure, but must be resolved before the inference service can be used in production.
+
+### Key Findings
+
+#### HIGH Severity
+
+1. **[HIGH] Missing UUID import in ml_service.py** [file: backend/app/services/ml_service.py:958]
+   - **Issue**: Function `predict_stock()` uses `UUID` type hint at line 958 but `UUID` is not imported. This will cause a `NameError: name 'UUID' is not defined` at runtime when the function is called.
+   - **Evidence**: 
+     - Line 958: `stock_id: UUID,` uses UUID type hint
+     - Lines 1-22: Imports section does not include `from uuid import UUID`
+     - Function is used in inference service (Story 2.6) and would fail at runtime
+   - **Impact**: Critical - This prevents the inference service from working. Any call to `predict_stock()` will raise a NameError.
+   - **Action Required**: Add `from uuid import UUID` to the imports section at the top of `backend/app/services/ml_service.py`
+
+### Acceptance Criteria Coverage
+
+| AC# | Description | Status | Evidence (file:line) |
+|-----|-------------|--------|----------------------|
+| 1 | Python ML environment configured with PyTorch, TensorFlow, scikit-learn | **IMPLEMENTED** | `backend/requirements.txt:20-23` - torch ✅, scikit-learn ✅, pandas ✅, numpy ✅; TensorFlow correctly omitted per story notes |
+| 2 | Training data pipeline: historical market data + sentiment → feature vectors | **IMPLEMENTED** | `backend/app/services/ml_service.py:26-98` (`load_training_data()`), `106-279` (`prepare_feature_vectors()`) - Both functions implemented with 9 features, normalization, validation |
+| 3 | Neural network model architecture defined (can be simple initially) | **IMPLEMENTED** | `backend/app/services/ml_service.py:282-310` (`NeuralNetworkModel` class) - 2 hidden layers (128, 64), ReLU, dropout, Softmax, CrossEntropyLoss, Adam optimizer |
+| 4 | Random Forest classifier model defined | **IMPLEMENTED** | `backend/app/services/ml_service.py:313-348` (`train_random_forest()` function) - scikit-learn RandomForestClassifier with configurable hyperparameters |
+| 5 | Training script can run locally or in cloud | **IMPLEMENTED** | `backend/app/services/ml_service.py:631-777` (`train_models()` function) - Full training workflow with error handling, logging, no local-only dependencies |
+| 6 | Model artifacts saved (can use GitHub LFS or cloud storage) | **IMPLEMENTED** | `backend/app/services/ml_service.py:403-472` (`save_model()` function) - Saves .pth and .pkl files with metadata JSON. `ml-models/` directory exists with 6 model files |
+| 7 | Model versioning system in place | **IMPLEMENTED** | `backend/app/services/ml_service.py:475-576` (`load_model()`, `get_latest_model_version()` functions) - Timestamp-based versioning, metadata tracking, version retrieval |
+
+**Summary**: **7 of 7 acceptance criteria fully implemented** ✅
+
+### Task Completion Validation
+
+**Critical Validation**: All 50 tasks were systematically verified against the codebase. Key validations:
+
+| Task Category | Marked As | Verified As | Evidence |
+|--------------|-----------|-------------|----------|
+| ML environment setup | ✅ Complete | ✅ **VERIFIED** | `backend/requirements.txt:20-23` - All dependencies present |
+| Training data pipeline | ✅ Complete | ✅ **VERIFIED** | `backend/app/services/ml_service.py:26-279` - Full implementation |
+| Neural network architecture | ✅ Complete | ✅ **VERIFIED** | `backend/app/services/ml_service.py:282-310` - Complete class implementation |
+| Random Forest model | ✅ Complete | ✅ **VERIFIED** | `backend/app/services/ml_service.py:313-348` - Full implementation |
+| Training script | ✅ Complete | ✅ **VERIFIED** | `backend/app/services/ml_service.py:631-777` - Complete workflow |
+| Model artifact saving | ✅ Complete | ✅ **VERIFIED** | `ml-models/` directory with 6 model files, metadata JSON files |
+| Model versioning | ✅ Complete | ✅ **VERIFIED** | `backend/app/services/ml_service.py:475-576` - Full versioning system |
+| Unit tests | ✅ Complete | ✅ **VERIFIED** | `backend/tests/test_services/test_ml_service.py` - 20 comprehensive unit tests |
+
+**Summary**: **All 50 completed tasks verified complete** ✅. No false completions found.
+
+### Test Coverage and Gaps
+
+**Unit Test Coverage:**
+- ✅ Feature engineering: `test_prepare_feature_vectors_basic()` - Tests feature vector creation
+- ✅ Neural network architecture: `test_neural_network_model_architecture()` - Tests forward pass
+- ✅ Random Forest training: `test_train_random_forest()` - Tests model training
+- ✅ Model evaluation: `test_evaluate_model_random_forest()`, `test_evaluate_model_neural_network()` - Tests metrics
+- ✅ Label generation: `test_generate_labels()` - Tests buy/sell/hold label generation
+- ✅ Model saving/loading: `test_save_and_load_random_forest()`, `test_save_and_load_neural_network()` - Tests round-trip
+- ✅ Model versioning: `test_get_latest_model_version()`, `test_get_latest_model_version_none()` - Tests version retrieval
+- ✅ Inference functions: `test_initialize_models()`, `test_infer_neural_network()`, `test_infer_random_forest()` - Tests inference
+- ✅ Prediction service: `test_predict_stock_with_provided_data_ensemble()`, `test_predict_stock_with_database_loaded_data()`, `test_predict_stock_single_model_fallback()`, `test_predict_stock_missing_market_data()`, `test_predict_stock_missing_sentiment_uses_default()`, `test_predict_stock_no_models_loaded()`, `test_predict_stock_empty_history_fallback()`, `test_predict_stock_model_failure_graceful_degradation()` - Comprehensive inference testing
+
+**Test Quality:**
+- ✅ 20 unit tests covering all core functionality
+- ✅ Tests use appropriate mocking (no database dependencies in unit tests)
+- ✅ Edge cases covered (missing data, model failures, graceful degradation)
+- ✅ Tests use small datasets as required
+- ✅ All tests are well-structured and maintainable
+
+**Test Gaps:**
+- ⚠️ Integration tests for `load_training_data()` with real database - Correctly documented as deferred to Story 2.6 per story notes
+- ⚠️ End-to-end training pipeline test - Correctly documented as deferred per story notes
+
+### Architectural Alignment
+
+**Tech Spec Compliance:**
+- ✅ ML Model Training Service located at `backend/app/services/ml_service.py` per tech spec
+- ✅ Uses async/await patterns for database queries (SQLAlchemy async support)
+- ✅ Feature engineering combines market data + sentiment → feature vectors (9 features)
+- ✅ Neural network and Random Forest models implemented
+- ✅ Model artifacts saved to `ml-models/` directory (6 model files present)
+- ✅ Model versioning system in place (timestamp-based)
+- ✅ Training workflow matches tech spec (load data → feature engineering → train → evaluate → save)
+
+**Architecture Patterns:**
+- ✅ Follows service pattern from `sentiment_service.py` (async, structured logging, error handling)
+- ✅ Uses SQLAlchemy async patterns for database queries
+- ✅ Structured logging throughout (`logger.info`, `logger.warning`, `logger.error`)
+- ✅ Error handling with graceful degradation (try/except blocks)
+- ✅ Model caching for inference (global variables with initialization function)
+
+**Dependencies:**
+- ✅ PyTorch added to requirements.txt
+- ✅ TensorFlow correctly omitted (optional, PyTorch sufficient per story notes)
+- ✅ scikit-learn, pandas, numpy added
+- ✅ All dependencies compatible with Python 3.11+
+
+### Code Quality Review
+
+**Strengths:**
+- ✅ Comprehensive docstrings for all functions
+- ✅ Type hints throughout (except missing UUID import - bug)
+- ✅ Structured logging with context
+- ✅ Error handling with graceful degradation
+- ✅ Follows project patterns (async/await, service layer)
+- ✅ Clean separation of concerns (training vs inference functions)
+- ✅ Model caching pattern for efficient inference
+
+**Issues Found:**
+- ❌ **HIGH**: Missing `from uuid import UUID` import (line 958 uses UUID type hint)
+
+### Security Notes
+
+- ✅ Model versioning system tracks model lineage (prevents model poisoning attacks)
+- ✅ Model metadata includes training date and performance metrics (audit trail)
+- ✅ Error handling prevents information leakage (exceptions logged, not exposed)
+- ✅ `.gitignore` prevents committing large model files to repository
+- ⚠️ No authentication/authorization checks on training endpoint (not yet implemented - acceptable for MVP)
+- ⚠️ Model files stored locally (no access controls) - acceptable for MVP, should be secured in production
+
+### Best-Practices and References
+
+**ML Best Practices Applied:**
+- ✅ Feature normalization to [0, 1] range for stable training
+- ✅ Train/validation/test split (70/15/15) with stratification
+- ✅ Dropout regularization in neural network
+- ✅ Model versioning for tracking and rollback
+- ✅ Metadata tracking for model lineage
+- ✅ Ensemble prediction support (neural network + Random Forest)
+
+**Code Quality:**
+- ✅ Type hints throughout (except UUID import bug)
+- ✅ Comprehensive docstrings for all functions
+- ✅ Structured logging with context
+- ✅ Error handling with graceful degradation
+- ✅ Follows project patterns (async/await, service layer)
+
+**References:**
+- PyTorch documentation: https://pytorch.org/docs/stable/
+- scikit-learn documentation: https://scikit-learn.org/stable/
+- SQLAlchemy async patterns: https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html
+
+### Action Items
+
+**Code Changes Required:**
+- [x] [High] Add missing UUID import: Add `from uuid import UUID` to imports section at top of `backend/app/services/ml_service.py` (line ~8, after other imports) [file: backend/app/services/ml_service.py:1-22, 958] - **RESOLVED**: Import added at line 9
+
+**Advisory Notes:**
+- Note: Integration tests for `load_training_data()` with real database are correctly deferred to Story 2.6 per story notes
+- Note: Command-line interface and FastAPI admin endpoint for training are optional enhancements that can be added later
+- Note: Model storage migration to cloud (S3, GitHub LFS) can be done when needed for production deployment
+
+---

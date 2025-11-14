@@ -84,9 +84,10 @@ describe('Login Component', () => {
 
       await user.type(emailInput, 'notanemail');
       await user.type(passwordInput, 'password123');
-      
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-      await user.click(submitButton);
+      const form = emailInput.closest('form') as HTMLFormElement;
+      if (form) form.noValidate = true;
+      // submit the form directly to bypass native email validation
+      form ? form.dispatchEvent(new Event('submit', { bubbles: true })) : await user.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
@@ -103,9 +104,9 @@ describe('Login Component', () => {
       // Enter invalid email
       await user.type(emailInput, 'invalid');
       await user.type(passwordInput, 'password123');
-      
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-      await user.click(submitButton);
+      const form = emailInput.closest('form') as HTMLFormElement;
+      if (form) form.noValidate = true;
+      form ? form.dispatchEvent(new Event('submit', { bubbles: true })) : await user.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
@@ -185,10 +186,10 @@ describe('Login Component', () => {
       renderLogin();
 
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
+      const form = passwordInput.closest('form') as HTMLFormElement;
+      if (form) form.noValidate = true;
       await user.type(passwordInput, 'password123');
-      await user.click(submitButton);
+      form ? form.dispatchEvent(new Event('submit', { bubbles: true })) : await user.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/email is required/i)).toBeInTheDocument();
@@ -200,10 +201,10 @@ describe('Login Component', () => {
       renderLogin();
 
       const emailInput = screen.getByLabelText(/email/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
+      const form = emailInput.closest('form') as HTMLFormElement;
+      if (form) form.noValidate = true;
       await user.type(emailInput, 'test@example.com');
-      await user.click(submitButton);
+      form ? form.dispatchEvent(new Event('submit', { bubbles: true })) : await user.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/password is required/i)).toBeInTheDocument();

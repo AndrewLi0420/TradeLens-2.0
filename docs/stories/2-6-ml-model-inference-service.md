@@ -270,6 +270,7 @@ This story implements the ML model inference service as defined in the [Epic 2 T
 - 2025-01-31: Story context XML generated - Technical context assembled with documentation, code artifacts, interfaces, constraints, and testing guidance. Status updated to ready-for-dev.
 - 2025-01-31: Implementation complete - All tasks completed. Created ML inference service with FastAPI endpoint, model caching, ensemble prediction, comprehensive error handling, and test suite. All acceptance criteria met. Status updated to review.
 - 2025-01-31: Senior Developer Review complete - All 7 acceptance criteria verified implemented with evidence. All 9 major tasks verified complete. Outcome: Changes Requested → Approve (after unit test addition). Critical finding resolved: Comprehensive unit test suite for `predict_stock()` function added (8 test cases, all passing). Status updated to done.
+- 2025-01-31: Follow-up Code Review - Fresh systematic validation performed. All acceptance criteria and tasks verified complete with evidence. Implementation remains solid with comprehensive test coverage. No new issues found.
 
 ## Dev Agent Record
 
@@ -515,5 +516,200 @@ This story implements ML model inference service with FastAPI endpoint, model ca
 - ✅ Code quality review performed
 - ✅ Security review performed
 - ✅ Outcome decided: APPROVE (all issues resolved, comprehensive unit tests added)
+- ✅ Review notes appended
+
+---
+
+## Senior Developer Review (AI) - Follow-up Review
+
+### Reviewer
+Andrew
+
+### Date
+2025-01-31 (Follow-up)
+
+### Outcome
+**Approve** - Fresh systematic validation confirms all 7 acceptance criteria remain fully implemented with evidence. All 9 major tasks verified complete. Implementation is production-ready with comprehensive test coverage. No regressions or new issues identified.
+
+### Summary
+
+This follow-up review was requested to perform a fresh systematic validation of Story 2.6. The implementation remains solid and complete. All acceptance criteria are verified with concrete evidence (file:line references). All tasks marked complete are verified as actually implemented. Code quality is high with proper async patterns, comprehensive error handling, structured logging, and extensive test coverage (8 unit tests for `predict_stock()` plus integration tests).
+
+### Key Findings
+
+**HIGH Severity:**
+- None - All acceptance criteria implemented, all tasks verified complete
+
+**MEDIUM Severity:**
+- None
+
+**LOW Severity:**
+- None
+
+### Acceptance Criteria Coverage (Fresh Validation)
+
+| AC# | Description | Status | Evidence |
+|-----|-------------|--------|----------|
+| AC1 | Model inference service/endpoint in FastAPI | ✅ IMPLEMENTED | `backend/app/api/v1/endpoints/ml.py:18-112` - POST /api/v1/ml/predict endpoint with Pydantic request/response schemas. Router included in `backend/app/main.py:47`. |
+| AC2 | Input: current market data + sentiment scores for a stock | ✅ IMPLEMENTED | `backend/app/services/ml_service.py:999-1013` - Loads market data via `get_latest_market_data()` and sentiment via `get_aggregated_sentiment()`, or accepts as optional parameters. Historical data loading (`get_market_data_history`, `get_sentiment_data_history`) at lines 1026-1040 for feature engineering. |
+| AC3 | Models generate: prediction signal (buy/sell/hold) + confidence score | ✅ IMPLEMENTED | `backend/app/services/ml_service.py:1103-1144` - Neural network inference (`_infer_neural_network`) and Random Forest inference (`_infer_random_forest`). Signal conversion via `_class_to_signal()` at line 943. Ensemble combination at lines 1147-1186. |
+| AC4 | Confidence score calculated from R² analysis of model performance | ✅ IMPLEMENTED | `backend/app/services/ml_service.py:901-940` - `_calculate_confidence_score()` function uses R² from model metadata (line 924), adjusted by prediction probability (line 932). Falls back to accuracy if R² unavailable (line 928). |
+| AC5 | Inference completes within <1 minute latency requirement | ✅ IMPLEMENTED | `backend/app/services/ml_service.py:990,1189` - Latency measured from start_time to completion. Model caching at module level (lines 782-785) and startup initialization (`backend/app/lifetime.py:94-116`) prevents per-request loading overhead. Latency logged at line 1193. |
+| AC6 | Both neural network and Random Forest models used (ensemble or separate) | ✅ IMPLEMENTED | `backend/app/services/ml_service.py:1147-1186` - Ensemble mode combines both models with majority vote for signals (line 1155) and weighted average for confidence (lines 1162-1170). Graceful degradation: if one model fails, uses the other (lines 1118-1122, 1140-1144). Single model fallback supported (lines 1175-1184). |
+| AC7 | Model performance metrics logged (R², accuracy) | ✅ IMPLEMENTED | `backend/app/services/ml_service.py:1214-1228` - Logs R² and accuracy from model metadata for both neural network and Random Forest models. Structured logging format compatible with Render dashboard aggregation. |
+
+**Summary:** 7 of 7 acceptance criteria fully implemented (100%) - Verified with fresh evidence
+
+### Task Completion Validation (Fresh Validation)
+
+| Task | Marked As | Verified As | Evidence |
+|------|-----------|-------------|----------|
+| Create ML inference service endpoint | ✅ Complete | ✅ VERIFIED COMPLETE | `backend/app/api/v1/endpoints/ml.py:18-112` - POST /api/v1/ml/predict endpoint. `backend/app/schemas/ml.py` - Pydantic schemas (MLPredictRequest, MLPredictResponse, ModelPrediction). Router registered in `backend/app/main.py:47`. |
+| Implement input data preparation | ✅ Complete | ✅ VERIFIED COMPLETE | `backend/app/services/ml_service.py:999-1078` - Loads market data and sentiment from DB or accepts parameters. Historical data loading (180 days) for feature engineering at lines 1022-1060. Feature vector preparation using `prepare_feature_vectors()` at line 1078. Dimension validation at lines 1086-1091. |
+| Implement model inference | ✅ Complete | ✅ VERIFIED COMPLETE | `backend/app/services/ml_service.py:849-874` - `_infer_neural_network()` for PyTorch model. `backend/app/services/ml_service.py:876-898` - `_infer_random_forest()` for scikit-learn model. Both return (predicted_class, probabilities). Inference orchestration at lines 1103-1144. |
+| Implement confidence score calculation | ✅ Complete | ✅ VERIFIED COMPLETE | `backend/app/services/ml_service.py:901-940` - `_calculate_confidence_score()` uses R² from metadata (line 924), adjusted by prediction probability (line 932), normalized to [0, 1] (line 938). Called for both models at lines 1107-1111, 1129-1133. |
+| Optimize inference latency | ✅ Complete | ✅ VERIFIED COMPLETE | `backend/app/lifetime.py:94-116` - Models initialized at FastAPI startup via `initialize_models()`. `backend/app/services/ml_service.py:782-785` - Module-level caching (`_neural_network_model`, `_random_forest_model`). Latency measurement at lines 990, 1189. |
+| Integrate both models | ✅ Complete | ✅ VERIFIED COMPLETE | `backend/app/services/ml_service.py:1147-1186` - Ensemble strategy: majority vote for signals (line 1155), weighted average for confidence (lines 1162-1170). Model availability checking at lines 1096-1100. Graceful degradation if one model fails (lines 1118-1122, 1140-1144). |
+| Add model performance logging | ✅ Complete | ✅ VERIFIED COMPLETE | `backend/app/services/ml_service.py:1192-1228` - Structured logging: inference requests (line 1192), predictions (line 1193), latency (line 1198), model performance metrics (R², accuracy) at lines 1217-1227. Error logging at lines 1234-1240. |
+| Testing: Unit tests | ✅ Complete | ✅ VERIFIED COMPLETE | `backend/tests/test_services/test_ml_service.py:278-403` - Tests for model initialization, neural network inference, Random Forest inference, confidence scoring, class-to-signal conversion. Lines 405-795: 8 comprehensive unit tests for `predict_stock()` covering ensemble, database loading, single model fallback, error handling, missing data, graceful degradation. |
+| Testing: Integration tests | ✅ Complete | ✅ VERIFIED COMPLETE | `backend/tests/test_api/test_ml_inference_endpoint.py:96-193` - Integration tests for FastAPI endpoint: missing models (503), end-to-end inference (200), invalid stock ID (400), invalid request (422). Uses real database fixtures and model initialization. |
+
+**Summary:** 9 of 9 completed tasks verified complete (100%) - No false completions found
+
+### Test Coverage and Gaps (Fresh Validation)
+
+**Unit Tests:**
+- ✅ Model initialization: `test_initialize_models()` (line 279), `test_initialize_models_missing()` (line 312)
+- ✅ Neural network inference: `test_infer_neural_network()` (line 322)
+- ✅ Random Forest inference: `test_infer_random_forest()` (line 352)
+- ✅ Confidence score calculation: `test_calculate_confidence_score()` (line 372)
+- ✅ Class to signal conversion: `test_class_to_signal()` (line 397)
+- ✅ **Comprehensive `predict_stock()` tests (8 test cases):**
+  - `test_predict_stock_with_provided_data_ensemble()` (line 407) - Ensemble with provided data
+  - `test_predict_stock_with_database_loaded_data()` (line 469) - Database loading paths
+  - `test_predict_stock_single_model_fallback()` (line 537) - Single model scenarios
+  - `test_predict_stock_missing_market_data()` (line 589) - Missing market data error
+  - `test_predict_stock_missing_sentiment_uses_default()` (line 615) - Missing sentiment default (0.0)
+  - `test_predict_stock_no_models_loaded()` (line 668) - No models error
+  - `test_predict_stock_empty_history_fallback()` (line 704) - Empty history handling
+  - `test_predict_stock_model_failure_graceful_degradation()` (line 746) - Model failure degradation
+
+**Integration Tests:**
+- ✅ `test_ml_predict_endpoint_missing_models()` (line 97) - 503 when models unavailable
+- ✅ `test_ml_predict_endpoint_with_market_data()` (line 111) - End-to-end inference with real DB
+- ✅ `test_ml_predict_endpoint_invalid_stock_id()` (line 169) - 400 for invalid stock
+- ✅ `test_ml_predict_endpoint_invalid_request()` (line 183) - 422 for validation errors
+
+**Test Quality:**
+- ✅ Proper async/await usage with `pytest.mark.asyncio`
+- ✅ Mocking strategy: Models mocked for unit tests, real models for integration tests
+- ✅ Database fixtures: `db_session`, `test_stock_with_data` properly configured
+- ✅ Edge cases covered: Missing data, model failures, invalid inputs
+- ✅ Error handling verified: Appropriate exceptions raised and caught
+
+**Coverage Assessment:**
+- ✅ All major code paths tested
+- ✅ Error scenarios covered
+- ✅ Edge cases handled
+- ✅ Integration with database and models verified
+- **No significant gaps identified**
+
+### Architectural Alignment (Fresh Validation)
+
+**Tech Spec Compliance:**
+- ✅ ML Model Inference Service location: `backend/app/services/ml_service.py` (inference functions) - matches spec
+- ✅ FastAPI endpoint: `backend/app/api/v1/endpoints/ml.py` - matches spec pattern
+- ✅ Model caching: Models loaded at startup (`lifetime.py:94-116`) - matches performance requirement
+- ✅ Ensemble strategy: Majority vote for signals, weighted average for confidence - matches spec workflow
+- ✅ Feature engineering: Uses `prepare_feature_vectors()` from training pipeline (line 1078) - ensures consistency
+- ✅ Latency optimization: Model caching prevents per-request loading - matches <1 minute requirement
+
+**Architecture Patterns:**
+- ✅ Async/await patterns throughout (SQLAlchemy async, FastAPI async endpoints)
+- ✅ Structured logging: JSON-compatible format for Render dashboard
+- ✅ Error handling: Graceful degradation if one model fails, continues with other
+- ✅ Model versioning: Uses `get_latest_model_version()` to load latest models
+
+**Performance Requirements:**
+- ✅ Model caching at startup prevents per-request model loading overhead
+- ✅ Latency measurement implemented and logged for monitoring
+- ✅ Async processing for non-blocking inference
+- ✅ Historical data loading optimized (180-day window, lines 1022-1024)
+
+### Security Notes (Fresh Validation)
+
+**Input Validation:**
+- ✅ Pydantic schemas validate request inputs (`backend/app/schemas/ml.py:9-59`) - price > 0, volume > 0, sentiment_score in [-1, 1]
+- ✅ Feature vector dimension validation (`ml_service.py:1086-1091`) - ensures 9 features
+- ✅ Stock ID validation via database queries (raises ValueError if not found)
+
+**Error Handling:**
+- ✅ Proper HTTP status codes: 400 (bad request), 422 (validation), 503 (service unavailable), 500 (internal error)
+- ✅ Error messages don't expose sensitive information (generic messages for 500 errors)
+- ✅ Graceful degradation when models unavailable (503 with clear message)
+
+**Model Security:**
+- ✅ Model versioning tracked in metadata
+- ✅ Input sanitization via feature vector validation
+- ✅ Output validation (confidence scores in [0, 1] range enforced by Pydantic)
+
+**Recommendations:**
+- Note: Consider adding rate limiting to `/api/v1/ml/predict` endpoint if exposed to public API
+- Note: Consider adding authentication/authorization middleware if endpoint needs access control
+
+### Best-Practices and References
+
+**Code Quality:**
+- ✅ Excellent async/await usage throughout
+- ✅ Proper error handling with try/except blocks
+- ✅ Structured logging with appropriate log levels
+- ✅ Type hints used consistently
+- ✅ Comprehensive docstrings
+
+**FastAPI Best Practices:**
+- ✅ Pydantic schemas for request/response validation
+- ✅ Dependency injection for database sessions
+- ✅ Proper HTTP status codes
+- ✅ Router organization follows RESTful patterns
+
+**ML Best Practices:**
+- ✅ Model caching prevents repeated loading
+- ✅ Feature engineering consistency (same as training)
+- ✅ Ensemble prediction with graceful degradation
+- ✅ Confidence scoring based on model performance metrics (R²)
+
+**References:**
+- FastAPI Documentation: https://fastapi.tiangolo.com/
+- PyTorch Documentation: https://pytorch.org/docs/
+- scikit-learn Documentation: https://scikit-learn.org/stable/
+
+### Action Items
+
+**Code Changes Required:**
+- None - All previous action items resolved
+
+**Advisory Notes:**
+- Note: Consider adding rate limiting to `/api/v1/ml/predict` endpoint if it becomes publicly accessible
+- Note: Consider adding authentication/authorization middleware if endpoint needs access control
+- Note: Historical data loading (180 days) in `predict_stock()` may be expensive for high-traffic scenarios - consider caching or optimizing if needed
+- Note: Ensemble prediction currently uses simple majority vote - consider more sophisticated ensemble strategies (weighted by model confidence, etc.) if needed
+
+---
+
+**Review Validation Checklist:**
+- ✅ Story file loaded and parsed
+- ✅ Story Status verified (currently "done")
+- ✅ Epic and Story IDs resolved (2.6)
+- ✅ Story Context located and reviewed
+- ✅ Epic Tech Spec located and reviewed
+- ✅ Architecture docs loaded
+- ✅ Tech stack detected (FastAPI, PyTorch, scikit-learn, PostgreSQL, SQLAlchemy)
+- ✅ Acceptance Criteria systematically validated with evidence (file:line references)
+- ✅ Task completion systematically validated with evidence (file:line references)
+- ✅ File List reviewed and verified
+- ✅ Tests identified and mapped to ACs
+- ✅ Code quality review performed
+- ✅ Security review performed
+- ✅ Outcome decided: APPROVE (no regressions, implementation remains solid)
 - ✅ Review notes appended
 

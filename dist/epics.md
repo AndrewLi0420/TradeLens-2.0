@@ -529,7 +529,148 @@ Create the user-facing recommendation dashboard, search functionality, and educa
 
 ---
 
-## Epic 4: Historical Data & Visualization
+## Epic 4: Data Collection & Model Training Infrastructure Improvements
+
+**Expanded Goal:**
+Address critical infrastructure gaps in data collection and model training to ensure reliable, unlimited data access and automated model retraining. This epic resolves API rate limit constraints by integrating yfinance as the primary data source, fixes async execution issues, implements automated model training workflows, and creates a unified data collection service with fallback mechanisms. This epic ensures the platform can scale to handle any number of stocks without API limitations and maintains model accuracy through automated retraining.
+
+**Value Delivery:**
+- Unlimited data collection without API rate limits enables scaling to full Fortune 500
+- Automated model training ensures models stay current with latest data
+- Unified data source strategy provides reliability and fallback options
+- Consistent data collection pipeline reduces errors and improves data quality
+
+---
+
+### Story 4.1: Unified Data Collection Service with yfinance Integration
+
+**As a** system,
+**I want** a unified data collection service that uses yfinance as the primary source with Alpha Vantage as fallback,
+**So that** I can collect unlimited market data without API rate limits.
+
+**Acceptance Criteria:**
+1. yfinance added to requirements.txt and properly installed
+2. New unified `collect_market_data()` function supports both yfinance and Alpha Vantage
+3. yfinance used as primary data source (no API key required, unlimited calls)
+4. Alpha Vantage used as fallback when yfinance fails
+5. Proper async execution: yfinance blocking calls run in executor/thread pool
+6. Symbol normalization handled (e.g., BRK.B → BRK-B for Yahoo Finance)
+7. Error handling for invalid symbols, missing data, network failures
+8. Data format consistency: both sources return same structure (price, volume, timestamp)
+9. Logging indicates which data source was used for each stock
+10. Configuration option to prefer Alpha Vantage or yfinance
+
+**Prerequisites:** Story 2.2 (market data collection pipeline)
+
+---
+
+### Story 4.2: Fix yfinance Async Execution Issues
+
+**As a** developer,
+**I want** yfinance calls to execute properly in async context without blocking the event loop,
+**So that** data collection can run efficiently in scheduled jobs.
+
+**Acceptance Criteria:**
+1. yfinance blocking calls wrapped in `asyncio.to_thread()` or executor
+2. No event loop blocking during data collection
+3. Concurrent data collection works correctly (multiple stocks processed in parallel)
+4. Error handling for thread pool exhaustion
+5. Timeout handling for long-running yfinance calls
+6. Performance testing: verify async execution doesn't degrade performance
+7. Memory usage remains reasonable during concurrent collection
+
+**Prerequisites:** Story 4.1 (yfinance integration)
+
+---
+
+### Story 4.3: Automated Model Training Pipeline
+
+**As a** system,
+**I want** automated model training scheduled to run periodically (daily/weekly),
+**So that** ML models stay current with latest market data and maintain accuracy.
+
+**Acceptance Criteria:**
+1. Scheduled training job added to APScheduler in `lifetime.py`
+2. Training runs daily at configurable time (e.g., 2 AM UTC after data collection)
+3. Training uses all available historical data from database
+4. Models automatically reloaded after successful training
+5. Training job logs progress and results
+6. Error handling: training failures don't crash scheduler
+7. Training skipped if insufficient data available (with logging)
+8. Model versioning: new models saved with timestamp version
+9. Old models retained for rollback capability
+10. Training metrics logged (accuracy, R², dataset size)
+
+**Prerequisites:** Story 2.5 (ML model training infrastructure), Story 2.2 (market data collection)
+
+---
+
+### Story 4.4: Model Training API Endpoint
+
+**As an** administrator,
+**I want** an API endpoint to manually trigger model training,
+**So that** I can retrain models on-demand for testing or after data issues.
+
+**Acceptance Criteria:**
+1. Admin endpoint: `POST /api/v1/admin/ml/train`
+2. Endpoint requires admin authentication/authorization
+3. Request accepts optional parameters: date range, model types (NN, RF, both)
+4. Response includes: training status, model paths, metrics
+5. Endpoint returns immediately (training runs asynchronously)
+6. Training status can be checked via separate status endpoint
+7. Error handling: returns appropriate HTTP status codes
+8. Rate limiting: prevents excessive manual training triggers
+
+**Prerequisites:** Story 4.3 (automated training pipeline)
+
+---
+
+### Story 4.5: Data Collection Error Handling & Retry Logic
+
+**As a** system,
+**I want** robust error handling and retry logic for data collection failures,
+**So that** temporary network issues or API problems don't cause data gaps.
+
+**Acceptance Criteria:**
+1. Retry logic for transient failures (network timeouts, 5xx errors)
+2. Exponential backoff between retries
+3. Maximum retry attempts configured (e.g., 3 attempts)
+4. Different retry strategies for yfinance vs Alpha Vantage
+5. Failed stocks logged with error details
+6. Failed stocks automatically retried on next collection cycle
+7. Circuit breaker pattern: stop retrying if source consistently fails
+8. Fallback to secondary source when primary fails after retries
+9. Error metrics tracked (failure rate, retry success rate)
+
+**Prerequisites:** Story 4.1 (unified data collection), Story 4.2 (async execution)
+
+---
+
+### Story 4.6: Data Collection Performance Optimization
+
+**As a** system,
+**I want** optimized data collection performance for large stock universes,
+**So that** collection completes efficiently even for 500+ stocks.
+
+**Acceptance Criteria:**
+1. Batch processing optimized for yfinance (larger batches possible)
+2. Concurrent collection tuned for optimal throughput
+3. Rate limiting removed or adjusted for yfinance (unlimited source)
+4. Collection time measured and logged
+5. Performance targets: 30 stocks in <30 seconds, 500 stocks in <10 minutes
+6. Memory usage optimized (streaming/batching to avoid loading all data)
+7. Database writes batched for efficiency
+8. Progress reporting for long-running collections
+
+**Prerequisites:** Story 4.1 (unified service), Story 4.2 (async execution), Story 4.5 (error handling)
+
+---
+
+**Epic 4 Summary:** 6 stories addressing critical infrastructure improvements: unified data collection with yfinance, async execution fixes, automated model training, admin API, error handling, and performance optimization. This epic ensures scalability and reliability of the data pipeline.
+
+---
+
+## Epic 5: Historical Data & Visualization
 
 **Expanded Goal:**
 Enable users to view historical recommendations, see time series visualizations of stock prices and recommendation patterns, and build confidence through understanding past performance. This epic adds the analytical and educational depth that transforms OpenAlpha from a recommendation tool into a comprehensive quantitative trading intelligence platform. By providing transparent historical context and visual data representation, users can learn from past recommendations and validate the platform's value.
@@ -541,7 +682,7 @@ Enable users to view historical recommendations, see time series visualizations 
 
 ---
 
-### Story 4.1: Historical Recommendations View
+### Story 5.1: Historical Recommendations View
 
 **As a** user,
 **I want** to view my past recommendations with dates and outcomes,
@@ -560,7 +701,7 @@ Enable users to view historical recommendations, see time series visualizations 
 
 ---
 
-### Story 4.2: Time Series Price Charts
+### Story 5.2: Time Series Price Charts
 
 **As a** user,
 **I want** to see time series charts showing stock price history,
@@ -579,7 +720,7 @@ Enable users to view historical recommendations, see time series visualizations 
 
 ---
 
-### Story 4.3: Recommendation History Visualization
+### Story 5.3: Recommendation History Visualization
 
 **As a** user,
 **I want** to see recommendations overlaid on price charts,
@@ -594,11 +735,11 @@ Enable users to view historical recommendations, see time series visualizations 
 6. Chart integrated into stock detail or historical view
 7. Visualization helps users understand recommendation timing
 
-**Prerequisites:** Story 4.1 (historical view), Story 4.2 (price charts)
+**Prerequisites:** Story 5.1 (historical view), Story 5.2 (price charts)
 
 ---
 
-### Story 4.4: Historical Sentiment Visualization
+### Story 5.4: Historical Sentiment Visualization
 
 **As a** user,
 **I want** to see sentiment trends over time on charts,
@@ -612,11 +753,11 @@ Enable users to view historical recommendations, see time series visualizations 
 5. Multiple sentiment sources aggregated visually
 6. Chart helps users understand sentiment's role in recommendations
 
-**Prerequisites:** Story 2.4 (sentiment data), Story 4.2 (charts foundation)
+**Prerequisites:** Story 2.4 (sentiment data), Story 5.2 (charts foundation)
 
 ---
 
-### Story 4.5: Performance Context for Historical Recommendations
+### Story 5.5: Performance Context for Historical Recommendations
 
 **As a** user,
 **I want** to see how past recommendations performed relative to actual market movements,
@@ -630,11 +771,11 @@ Enable users to view historical recommendations, see time series visualizations 
 5. Performance metrics displayed transparently
 6. Helps users understand recommendation reliability
 
-**Prerequisites:** Story 4.1 (historical view), Story 4.3 (visualization)
+**Prerequisites:** Story 5.1 (historical view), Story 5.3 (visualization)
 
 ---
 
-### Story 4.6: Advanced Filtering for Historical Data
+### Story 5.6: Advanced Filtering for Historical Data
 
 **As a** user,
 **I want** to filter and analyze historical recommendations by various criteria,
@@ -648,11 +789,11 @@ Enable users to view historical recommendations, see time series visualizations 
 5. Saved filter presets (optional - can defer)
 6. Performance metrics calculated for filtered subsets
 
-**Prerequisites:** Story 4.1 (historical view), Story 4.5 (performance context)
+**Prerequisites:** Story 5.1 (historical view), Story 5.5 (performance context)
 
 ---
 
-**Epic 4 Summary:** 6 stories adding historical analysis, time series visualizations, and performance tracking. Completes the MVP feature set.
+**Epic 5 Summary:** 6 stories adding historical analysis, time series visualizations, and performance tracking. Completes the MVP feature set.
 
 ---
 
@@ -661,9 +802,10 @@ Enable users to view historical recommendations, see time series visualizations 
 **Epic 1 (Foundation):** 7 stories - All foundational, sequential order
 **Epic 2 (Data & ML):** 8 stories - Sequential: data → models → recommendations
 **Epic 3 (Dashboard):** 9 stories - Build on Epics 1 & 2, mostly parallelizable within epic
-**Epic 4 (History & Viz):** 6 stories - Build on Epics 1-3, sequential visualization building
+**Epic 4 (Data & Training Improvements):** 6 stories - Infrastructure improvements for scalability and reliability
+**Epic 5 (History & Viz):** 6 stories - Build on Epics 1-3, sequential visualization building
 
-**Total Stories: 30** (within Level 3 range of 15-40)
+**Total Stories: 36** (within Level 3 range of 15-40)
 
 ---
 

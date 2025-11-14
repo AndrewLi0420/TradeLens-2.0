@@ -222,6 +222,256 @@ async def calculate_risk_level(
         return RiskLevelEnum.MEDIUM
 
 
+def validate_explanation_quality(explanation: str) -> dict[str, Any]:
+    """
+    Validate explanation quality against acceptance criteria.
+    
+    Checks:
+    - Length: 2-3 sentences (approximately 50-150 words)
+    - Contains sentiment, ML signal, and risk references
+    - Non-technical language (basic readability check)
+    - Data sources and timestamps included
+    
+    Args:
+        explanation: Explanation string to validate
+    
+    Returns:
+        Dictionary with validation results:
+        - is_valid: bool
+        - warnings: list[str] - List of quality warnings
+        - word_count: int
+        - sentence_count: int
+        - has_sentiment_ref: bool
+        - has_ml_signal_ref: bool
+        - has_risk_ref: bool
+        - has_data_sources: bool
+    """
+    warnings: list[str] = []
+    
+    # Count words and sentences
+    words = explanation.split()
+    word_count = len(words)
+    # Split by period followed by space or end of string (not decimal points or abbreviations)
+    # Use regex to split on periods that are followed by space or end of string
+    import re
+    # Split on period-space or period-end, but not on decimal numbers or abbreviations
+    sentence_endings = re.split(r'\.(?=\s|$)', explanation)
+    sentences = [s.strip() for s in sentence_endings if s.strip() and len(s.strip()) > 10]  # Filter out very short fragments
+    sentence_count = len(sentences)
+    
+    # Check length (50-150 words, 2-3 sentences)
+    if word_count < 50:
+        warnings.append(f"Explanation too short: {word_count} words (minimum 50)")
+    elif word_count > 200:
+        warnings.append(f"Explanation too long: {word_count} words (maximum 200)")
+    
+    if sentence_count < 2:
+        warnings.append(f"Explanation has too few sentences: {sentence_count} (minimum 2)")
+    elif sentence_count > 4:
+        warnings.append(f"Explanation has too many sentences: {sentence_count} (recommended 2-3)")
+    
+    # Check for required content references (case-insensitive)
+    explanation_lower = explanation.lower()
+    
+    # Check for sentiment references
+    sentiment_keywords = ['sentiment', 'positive', 'negative', 'neutral', 'favorable', 'unfavorable']
+    has_sentiment_ref = any(keyword in explanation_lower for keyword in sentiment_keywords)
+    if not has_sentiment_ref:
+        warnings.append("Explanation missing sentiment trend references")
+    
+    # Check for ML signal references
+    ml_keywords = ['model', 'confidence', 'ml', 'prediction', 'signal', 'buy', 'sell', 'hold']
+    has_ml_signal_ref = any(keyword in explanation_lower for keyword in ml_keywords)
+    if not has_ml_signal_ref:
+        warnings.append("Explanation missing ML model signal references")
+    
+    # Check for risk references
+    risk_keywords = ['risk', 'volatility', 'uncertainty', 'low risk', 'medium risk', 'high risk', 'moderate risk']
+    has_risk_ref = any(keyword in explanation_lower for keyword in risk_keywords)
+    if not has_risk_ref:
+        warnings.append("Explanation missing risk factor references")
+    
+    # Check for data sources
+    has_data_sources = 'data source' in explanation_lower or 'updated' in explanation_lower or 'timestamp' in explanation_lower
+    if not has_data_sources:
+        warnings.append("Explanation missing data source attribution or timestamps")
+    
+    # Basic readability check: avoid excessive technical jargon
+    technical_jargon = ['r²', 'r-squared', 'r2', 'neural network', 'random forest', 'ensemble']
+    jargon_count = sum(1 for jargon in technical_jargon if jargon in explanation_lower)
+    if jargon_count > 2:
+        warnings.append(f"Explanation may contain too much technical jargon ({jargon_count} technical terms)")
+    
+    # Overall validation: valid if no critical warnings
+    is_valid = len(warnings) == 0 or all('too' not in w.lower() for w in warnings)
+    
+    return {
+        "is_valid": is_valid,
+        "warnings": warnings,
+        "word_count": word_count,
+        "sentence_count": sentence_count,
+        "has_sentiment_ref": has_sentiment_ref,
+        "has_ml_signal_ref": has_ml_signal_ref,
+        "has_risk_ref": has_risk_ref,
+        "has_data_sources": has_data_sources,
+    }
+
+
+async def synthesize_explanation(
+    session: AsyncSession,
+    stock_id: UUID,
+    signal: str,
+    confidence_score: float,
+    sentiment_score: float | None,
+    risk_level: RiskLevelEnum,
+    ml_model_used: str = "ensemble",
+    ml_r_squared: float | None = None,
+) -> str:
+    """
+    Synthesize a human-readable explanation for a recommendation.
+    
+    Follows Pattern 2 (Confidence-Scored Recommendation Generation with Explanation Synthesis):
+    - Combines ML predictions, sentiment scores, risk assessment into readable explanations
+    - References all data sources transparently
+    - Includes timestamps for data freshness
+    - Uses non-technical language (2-3 sentences)
+    
+    Args:
+        session: Database session
+        stock_id: UUID of the stock
+        signal: Prediction signal ("buy", "sell", "hold")
+        confidence_score: ML model confidence score [0, 1]
+        sentiment_score: Aggregated sentiment score (can be None)
+        risk_level: Risk level (LOW, MEDIUM, HIGH)
+        ml_model_used: Type of ML model used ("neural_network", "random_forest", "ensemble")
+        ml_r_squared: R² score from ML model metadata (optional)
+    
+    Returns:
+        Explanation string (2-3 sentences) with data source references
+    """
+    from app.crud.sentiment_data import get_latest_sentiment_data
+    from app.crud.market_data import get_latest_market_data
+    
+    # Get latest data timestamps for freshness indicators
+    latest_sentiment = await get_latest_sentiment_data(session, stock_id)
+    latest_market = await get_latest_market_data(session, stock_id)
+    
+    # Format timestamps as relative time
+    def format_time_ago(timestamp: datetime | None) -> str:
+        if timestamp is None:
+            return "unknown"
+        now = datetime.now(timezone.utc)
+        diff = now - timestamp
+        minutes = int(diff.total_seconds() / 60)
+        hours = int(diff.total_seconds() / 3600)
+        if minutes < 1:
+            return "just now"
+        elif minutes < 60:
+            return f"{minutes} min ago"
+        elif hours < 24:
+            return f"{hours} hour{'s' if hours > 1 else ''} ago"
+        else:
+            days = int(diff.total_seconds() / 86400)
+            return f"{days} day{'s' if days > 1 else ''} ago"
+    
+    sentiment_time = format_time_ago(latest_sentiment.timestamp if latest_sentiment else None)
+    market_time = format_time_ago(latest_market.timestamp if latest_market else None)
+    
+    # Determine sentiment trend
+    if sentiment_score is None:
+        sentiment_trend = "neutral sentiment"
+        sentiment_desc = "limited sentiment data"
+    elif sentiment_score > 0.1:
+        sentiment_trend = "positive sentiment trends"
+        sentiment_desc = "favorable market sentiment"
+    elif sentiment_score < -0.1:
+        sentiment_trend = "negative sentiment trends"
+        sentiment_desc = "unfavorable market sentiment"
+    else:
+        sentiment_trend = "neutral sentiment trends"
+        sentiment_desc = "neutral market sentiment"
+    
+    # Format ML model signal description
+    signal_desc = {
+        "buy": "suggests potential price increase",
+        "sell": "indicates potential price decrease",
+        "hold": "suggests maintaining current position",
+    }.get(signal.lower(), "indicates a balanced outlook")
+    
+    # Format risk description
+    risk_desc = {
+        RiskLevelEnum.LOW: "low risk",
+        RiskLevelEnum.MEDIUM: "moderate risk",
+        RiskLevelEnum.HIGH: "higher risk",
+    }.get(risk_level, "moderate risk")
+    
+    # Format confidence as percentage
+    confidence_percent = int(confidence_score * 100)
+    
+    # Format R² if available
+    r_squared_str = ""
+    if ml_r_squared is not None:
+        r_squared_str = f" R²: {ml_r_squared:.2f}"
+    
+    # Build explanation (2-3 sentences, non-technical)
+    explanation_parts = []
+    
+    # Sentence 1: Main recommendation with ML signal and confidence
+    explanation_parts.append(
+        f"Our {ml_model_used.replace('_', ' ')} model {signal_desc} with {confidence_percent}% confidence "
+        f"(ML model confidence: {confidence_score:.2f}{r_squared_str}), "
+        f"based on analysis of recent market patterns and historical performance."
+    )
+    
+    # Sentence 2: Sentiment and risk factors
+    explanation_parts.append(
+        f"Market analysis shows {sentiment_trend} ({sentiment_desc}) and {risk_desc} factors, "
+        f"indicating {risk_level.value.lower()} volatility and market conditions."
+    )
+    
+    # Sentence 3: Data sources with timestamps (embedded in explanation)
+    data_sources = []
+    if latest_sentiment:
+        source_name = "News articles"
+        if hasattr(latest_sentiment, 'source') and latest_sentiment.source:
+            source_name = latest_sentiment.source.replace("_", " ").title()
+        data_sources.append(f"Sentiment from {source_name} (updated {sentiment_time})")
+    if latest_market:
+        data_sources.append(f"Market data (updated {market_time})")
+    if ml_r_squared is not None:
+        data_sources.append(f"ML model confidence: {confidence_score:.2f} R²: {ml_r_squared:.2f}")
+    else:
+        data_sources.append(f"ML model confidence: {confidence_score:.2f}")
+    
+    if data_sources:
+        explanation_parts.append(
+            f"Data sources: {', '.join(data_sources)}."
+        )
+    
+    explanation = " ".join(explanation_parts)
+    
+    # Ensure explanation is within reasonable length (50-200 words)
+    word_count = len(explanation.split())
+    if word_count < 50:
+        # Add more context if too short
+        explanation += " This recommendation considers multiple factors to provide a balanced assessment."
+    elif word_count > 200:
+        # Truncate if too long (shouldn't happen with 2-3 sentences, but safety check)
+        words = explanation.split()
+        explanation = " ".join(words[:200]) + "..."
+    
+    # Validate explanation quality and log warnings
+    validation_result = validate_explanation_quality(explanation)
+    if validation_result["warnings"]:
+        logger.warning(
+            "Explanation quality warnings for stock_id=%s: %s",
+            stock_id,
+            "; ".join(validation_result["warnings"]),
+        )
+    
+    return explanation
+
+
 async def generate_recommendations(
     session: AsyncSession,
     user_id: UUID,
@@ -248,13 +498,43 @@ async def generate_recommendations(
     Returns:
         List of persisted Recommendation instances
     """
-    # Load all stocks
-    stocks = await get_all_stocks(session)
+    # Load stocks, restricted by configured universe if provided
+    from app.core.config import settings
+    if getattr(settings, "STOCK_UNIVERSE", None):
+        from app.crud.stocks import get_stocks_by_symbols
+        stocks = await get_stocks_by_symbols(session, settings.STOCK_UNIVERSE)
+    else:
+        stocks = await get_all_stocks(session)
+    # Further restrict to stocks that actually have market data
+    from app.crud.market_data import get_stock_ids_with_market_data
+    stocks_with_data = await get_stock_ids_with_market_data(session)
+    stocks = [s for s in stocks if s.id in stocks_with_data]
     if not stocks:
-        logger.warning("No stocks available for recommendation generation")
+        logger.warning("No eligible stocks with market data after filtering universe")
         return []
 
+    logger.info(f"Starting recommendation generation: {len(stocks)} eligible stocks, target={daily_target_count}")
+    
+    # Check if ML models are loaded before proceeding
+    from app.services.ml_service import are_models_loaded
+    if not are_models_loaded():
+        error_msg = "No ML models loaded. Models must be initialized at startup. Check backend logs for model initialization errors."
+        logger.error(error_msg)
+        return []
+    
+    # Check if market data exists for at least one stock
+    from app.crud.market_data import get_market_data_count
+    market_data_count = await get_market_data_count(session)
+    if market_data_count == 0:
+        error_msg = "No market data available. Market data must be collected before generating recommendations."
+        logger.error(error_msg)
+        return []
+    
+    logger.info(f"ML models loaded: {are_models_loaded()}, Market data records: {market_data_count}")
+    
     candidates: list[dict[str, Any]] = []
+    failed_count = 0
+    filtered_count = 0
 
     # Fetch user preferences for preference-aware filtering
     user_prefs = await get_user_preferences(session, user_id)
@@ -285,6 +565,14 @@ async def generate_recommendations(
     # Predict for each stock and compute risk
     for stock in stocks:
         try:
+            # Skip stocks with no market data to avoid hard failures
+            from app.crud.market_data import get_latest_market_data
+            latest_md = await get_latest_market_data(session, stock.id)
+            if latest_md is None:
+                filtered_count += 1
+                logger.debug(f"Skipping {getattr(stock, 'symbol', stock.id)}: no market data")
+                continue
+
             inference = await predict_stock(
                 session=session,
                 stock_id=stock.id,
@@ -293,6 +581,18 @@ async def generate_recommendations(
 
             signal_str: str = inference["signal"]
             confidence: float = float(inference["confidence_score"])
+            model_used: str = inference.get("model_used", "ensemble")
+
+            # Extract R² from ML model metadata if available
+            ml_r_squared: float | None = None
+            if "neural_network_prediction" in inference:
+                nn_meta = inference.get("neural_network_prediction", {})
+                if isinstance(nn_meta, dict) and "r_squared" in nn_meta:
+                    ml_r_squared = float(nn_meta["r_squared"])
+            if ml_r_squared is None and "random_forest_prediction" in inference:
+                rf_meta = inference.get("random_forest_prediction", {})
+                if isinstance(rf_meta, dict) and "r_squared" in rf_meta:
+                    ml_r_squared = float(rf_meta["r_squared"])
 
             # Fetch aggregated sentiment for explicit factor and persistence
             try:
@@ -305,6 +605,11 @@ async def generate_recommendations(
             volatility_score = await calculate_volatility(session, stock.id, days=30)
             if not _volatility_ok_for_holding(volatility_score):
                 # Skip candidates that don't match user holding period preference
+                filtered_count += 1
+                logger.debug(
+                    f"Stock {stock.symbol} filtered out: volatility={volatility_score:.4f}, "
+                    f"holding_pref={holding_pref}"
+                )
                 continue
 
             # Compute risk level using ML confidence
@@ -315,6 +620,18 @@ async def generate_recommendations(
                 market_conditions=market_conditions,
             )
 
+            # Synthesize explanation for this recommendation
+            explanation = await synthesize_explanation(
+                session=session,
+                stock_id=stock.id,
+                signal=signal_str,
+                confidence_score=confidence,
+                sentiment_score=float(sentiment_score) if sentiment_score != 0.0 else None,
+                risk_level=risk_level,
+                ml_model_used=model_used,
+                ml_r_squared=ml_r_squared,
+            )
+
             # Rank keys: higher confidence first; lower risk preferred on ties
             candidates.append({
                 "stock_id": stock.id,
@@ -322,12 +639,40 @@ async def generate_recommendations(
                 "confidence": confidence,
                 "sentiment": float(sentiment_score),
                 "risk_level": risk_level,
+                "explanation": explanation,
             })
         except Exception as e:
-            logger.error("Generation failed for stock %s: %s", stock.id, e, exc_info=True)
+            failed_count += 1
+            error_type = type(e).__name__
+            error_msg = str(e)
+            logger.error(
+                "Generation failed for stock %s (%s): %s: %s",
+                stock.id,
+                getattr(stock, 'symbol', 'unknown'),
+                error_type,
+                error_msg,
+                exc_info=True
+            )
+            # Log first few failures with more detail to help diagnose
+            if failed_count <= 3:
+                logger.debug(
+                    "First failure details - stock_id=%s, error_type=%s, error=%s",
+                    stock.id,
+                    error_type,
+                    error_msg
+                )
             continue
 
+    logger.info(
+        f"Generation summary: {len(candidates)} candidates, {failed_count} failed, "
+        f"{filtered_count} filtered by preferences"
+    )
+    
     if not candidates:
+        logger.warning(
+            f"No candidates after processing {len(stocks)} stocks. "
+            f"Failed: {failed_count}, Filtered: {filtered_count}"
+        )
         return []
 
     # Sort: primary confidence desc, secondary sentiment desc, tertiary risk (LOW < MEDIUM < HIGH)
@@ -347,6 +692,7 @@ async def generate_recommendations(
     for item in selected:
         signal_enum = SignalEnum(item["signal"].lower()) if isinstance(item["signal"], str) else item["signal"]
         from uuid import uuid4
+        explanation = item.get("explanation", None)
         try:
             rec = Recommendation(
                 id=uuid4(),
@@ -356,6 +702,7 @@ async def generate_recommendations(
                 confidence_score=float(item["confidence"]),
                 sentiment_score=float(item.get("sentiment", 0.0)),
                 risk_level=item["risk_level"],
+                explanation=explanation,
                 created_at=now,
             )
         except TypeError:
@@ -367,6 +714,7 @@ async def generate_recommendations(
                 signal=signal_enum,
                 confidence_score=float(item["confidence"]),
                 risk_level=item["risk_level"],
+                explanation=explanation,
                 created_at=now,
             )
         session.add(rec)

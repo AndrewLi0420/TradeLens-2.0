@@ -58,23 +58,32 @@ development_status:
   epic-2-retrospective: optional
 
   epic-3: backlog
-  3-1-recommendation-dashboard-list-view: backlog
-  3-2-recommendation-detail-view: backlog
-  3-3-stock-search-functionality: backlog
-  3-4-recommendation-explanations-with-transparency: backlog
-  3-5-educational-tooltips-inline-help: backlog
-  3-6-recommendation-filtering-sorting: backlog
-  3-7-freemium-tier-stock-limit-enforcement-in-ui: backlog
-  3-8-user-preference-integration-with-recommendations: backlog
-  3-9-responsive-mobile-optimization: backlog
+  3-1-recommendation-dashboard-list-view: done
+  3-2-recommendation-detail-view: done
+  3-3-stock-search-functionality: done
+  3-4-recommendation-explanations-with-transparency: done
+  3-5-educational-tooltips-inline-help: done
+  3-6-recommendation-filtering-sorting: done
+  3-7-freemium-tier-stock-limit-enforcement-in-ui: done
+  3-8-user-preference-integration-with-recommendations: done
+  3-9-responsive-mobile-optimization: done
   epic-3-retrospective: optional
 
   epic-4: backlog
-  4-1-historical-recommendations-view: backlog
-  4-2-time-series-price-charts: backlog
-  4-3-recommendation-history-visualization: backlog
-  4-4-historical-sentiment-visualization: backlog
-  4-5-performance-context-for-historical-recommendations: backlog
-  4-6-advanced-filtering-for-historical-data: backlog
+  4-1-unified-data-collection-service-with-yfinance-integration: backlog
+  4-2-fix-yfinance-async-execution-issues: backlog
+  4-3-automated-model-training-pipeline: backlog
+  4-4-model-training-api-endpoint: backlog
+  4-5-data-collection-error-handling-retry-logic: backlog
+  4-6-data-collection-performance-optimization: backlog
   epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-historical-recommendations-view: backlog
+  5-2-time-series-price-charts: backlog
+  5-3-recommendation-history-visualization: backlog
+  5-4-historical-sentiment-visualization: backlog
+  5-5-performance-context-for-historical-recommendations: backlog
+  5-6-advanced-filtering-for-historical-data: backlog
+  epic-5-retrospective: optional
 

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3</storyId>
+    <title>Stock Search Functionality</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-27</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/3-3-stock-search-functionality.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user</asA>
+    <iWant>to search for stocks by symbol or company name</iWant>
+    <soThat>I can quickly find specific stocks and their recommendations</soThat>
+    <tasks>
+      <task id="1">Create StockSearch page component (AC: 1, 3, 4, 5)</task>
+      <task id="2">Create useStockSearch hook (AC: 2, 6, 7)</task>
+      <task id="3">Create StockSearchResults component (AC: 3, 4, 5)</task>
+      <task id="4">Add search input to navigation (AC: 1)</task>
+      <task id="5">Implement backend GET /stocks/search endpoint (AC: 2, 6, 7)</task>
+      <task id="6">Create StockSearch schema (AC: 4)</task>
+      <task id="7">Implement navigation from search results (AC: 5)</task>
+      <task id="8">Implement partial match and typo handling (AC: 6)</task>
+      <task id="9">Performance optimization (AC: 7)</task>
+      <task id="10">Styling and responsive design (AC: 1, 3, 4)</task>
+      <task id="11">Testing</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1">Search input field in navigation or dashboard</ac>
+    <ac id="2">Search works by stock symbol (e.g., "AAPL") or company name (e.g., "Apple")</ac>
+    <ac id="3">Search results displayed in list format</ac>
+    <ac id="4">Results show: symbol, company name, sector, recommendation status (if available)</ac>
+    <ac id="5">Clicking search result navigates to stock detail or recommendation</ac>
+    <ac id="6">Search handles partial matches and typos gracefully</ac>
+    <ac id="7">Search is fast (&lt;500ms response time)</ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Story 3.3: Stock Search Functionality">
+        Acceptance criteria and detailed design for stock search functionality. Includes API endpoint specification, PostgreSQL FTS integration, and performance requirements.
+      </doc>
+      <doc path="dist/epics.md" title="Epic Breakdown" section="Story 3.3: Stock Search Functionality">
+        User story and acceptance criteria for stock search functionality. Defines search by symbol or company name, results display, and navigation requirements.
+      </doc>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="FR007a: Stock Search Functionality">
+        Functional requirement FR007a: Users can search for stocks by symbol or company name. Search results display stock information and availability for tracking.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture" section="ADR-005: PostgreSQL FTS for Search">
+        Architecture decision to use PostgreSQL full-text search instead of external search service. No external service required, uses built-in PostgreSQL FTS capabilities.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture" section="Epic to Architecture Mapping">
+        Epic 3 architecture mapping and component locations. Frontend: Search.tsx, backend: search.py endpoint, React Query hooks pattern.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture" section="Technology Stack Details">
+        React Query 5.x for server state management, Axios for HTTP client, Tailwind CSS for styling, shadcn/ui component library integration.
+      </doc>
+      <doc path="dist/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="APIs and Interfaces">
+        GET /api/v1/stocks/search endpoint specification with query parameter q, authentication required, response format with stock objects.
+      </doc>
+      <doc path="dist/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Workflows and Sequencing">
+        Stock Search Workflow steps: user types query, debounced input triggers search, backend performs PostgreSQL FTS, results displayed, navigation to detail.
+      </doc>
+      <doc path="dist/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Non-Functional Requirements">
+        Performance targets: search response time &lt;500ms, API endpoints &lt;500ms for data retrieval. Security requirements: authentication required, input validation.
+      </doc>
+      <doc path="docs/stories/3-2-recommendation-detail-view.md" title="Story 3.2: Recommendation Detail View" section="Dev Agent Record">
+        Learnings from previous story: React Query hook patterns, shadcn/ui setup, backend endpoint patterns, navigation patterns, error handling, performance optimization.
+      </doc>
+    </docs>
+    <code>
+      <file path="backend/app/crud/stocks.py" kind="crud" symbol="search_stocks" lines="31-44" reason="Existing stock search function using PostgreSQL ilike for partial matching. Reuse this pattern for API endpoint implementation." />
+      <file path="backend/app/models/stock.py" kind="model" symbol="Stock" lines="12-33" reason="Stock model with symbol, company_name, sector, fortune_500_rank fields. Used for search results and relationships." />
+      <file path="backend/app/schemas/stock.py" kind="schema" symbol="StockRead" lines="28-33" reason="Existing StockRead schema. Extend with StockSearch schema adding has_recommendation field for search results." />
+      <file path="frontend/src/hooks/useRecommendations.ts" kind="hook" symbol="useRecommendations" lines="11-35" reason="React Query hook pattern for fetching data. Follow same pattern for useStockSearch: queryKey, queryFn, staleTime 5min, gcTime 10min, enabled condition." />
+      <file path="frontend/src/hooks/useRecommendationDetail.ts" kind="hook" symbol="useRecommendationDetail" lines="12-36" reason="React Query hook for single item fetch. Similar pattern for search: enabled condition based on query length, error handling, retry configuration." />
+      <file path="frontend/src/services/recommendations.ts" kind="service" symbol="getRecommendations" lines="42-68" reason="API service function pattern using apiClient.get with query params. Follow same pattern for getStockSearch function." />
+      <file path="frontend/src/components/common/Navigation.tsx" kind="component" symbol="Navigation" lines="12-53" reason="Navigation component structure. Add search input field here or in Header component for AC1 requirement." />
+      <file path="frontend/src/components/common/Header.tsx" kind="component" symbol="Header" lines="14-98" reason="Header component with navigation. Add search input field in desktop navigation section (line 38) or create separate search component." />
+      <file path="frontend/src/pages/Dashboard.tsx" kind="page" symbol="Dashboard" lines="14-91" reason="Dashboard page component pattern with authentication check, React Query usage, loading/error states. Follow same pattern for Search.tsx page." />
+      <file path="frontend/src/pages/RecommendationDetail.tsx" kind="page" symbol="RecommendationDetail" reason="Detail page pattern with React Router integration, authentication check, loading/error states. Use similar pattern for Search page navigation." />
+      <file path="frontend/src/App.tsx" kind="routing" symbol="App" lines="12-65" reason="React Router configuration. Add route for /search page with ProtectedRoute and Layout wrapper." />
+      <file path="backend/app/api/v1/endpoints/recommendations.py" kind="endpoint" symbol="list_recommendations" lines="24-55" reason="Backend endpoint pattern with authentication, query params, error handling. Follow same pattern for GET /stocks/search endpoint." />
+    </code>
+    <dependencies>
+      <node>
+        <package name="@tanstack/react-query" version="^5.90.6" reason="Server state management and caching for search results" />
+        <package name="axios" version="^1.13.1" reason="HTTP client for API requests to search endpoint" />
+        <package name="react-router-dom" version="^6.30.1" reason="Client-side routing for navigation from search results" />
+        <package name="@radix-ui/react-popover" version="^1.1.15" reason="shadcn/ui component for search results dropdown (if used)" />
+        <package name="lucide-react" version="^0.552.0" reason="Icon library for search icon and UI elements" />
+        <package name="tailwindcss" version="^4.1.16" reason="Styling framework for search UI with black background and financial blue/green accents" />
+      </node>
+      <python>
+        <package name="fastapi" version=">=0.109.2" reason="Web framework for search API endpoint" />
+        <package name="sqlalchemy" version=">=2.0.0,<3.0.0" reason="ORM for database queries with PostgreSQL FTS support" />
+        <package name="pydantic" version=">=1.10.6" reason="Data validation for search query parameters and response schemas" />
+        <package name="psycopg2-binary" version=">=2.9.0" reason="PostgreSQL database adapter for FTS queries" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Use React Query 5.x for server state management with staleTime 5 minutes, gcTime 10 minutes, enabled only when query length >= 2</constraint>
+    <constraint>Follow existing React Query hook patterns from useRecommendations and useRecommendationDetail hooks</constraint>
+    <constraint>Use shadcn/ui component library (Input, Card, Badge) for consistent UI components</constraint>
+    <constraint>Apply Tailwind CSS styling with black background and financial blue/green accents per UX Design Specification</constraint>
+    <constraint>Backend endpoint must require authentication via dependency injection (current_user)</constraint>
+    <constraint>Use PostgreSQL ilike operator for case-insensitive partial matching (existing pattern in search_stocks function)</constraint>
+    <constraint>Limit search results to 50 items for performance (existing limit in search_stocks function)</constraint>
+    <constraint>Implement 500ms debouncing on frontend search input to reduce API calls</constraint>
+    <constraint>Target search response time &lt;500ms per Story 3.3 acceptance criteria</constraint>
+    <constraint>Ensure database indexes on stocks.symbol and stocks.company_name for fast search</constraint>
+    <constraint>Follow project structure: frontend/src/pages/Search.tsx, frontend/src/components/search/StockSearchResults.tsx, frontend/src/hooks/useStockSearch.ts</constraint>
+    <constraint>Backend endpoint: backend/app/api/v1/endpoints/search.py (create new file or extend existing)</constraint>
+    <constraint>Use React Router for navigation from search results to recommendation detail or stock detail</constraint>
+    <constraint>Handle errors: 400 for invalid query, 401 for auth failure, network errors with user-friendly messages</constraint>
+    <constraint>Responsive design: search input and results must work on mobile (375px, 414px widths)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="GET /api/v1/stocks/search" kind="REST endpoint" signature="GET /api/v1/stocks/search?q={query}" path="backend/app/api/v1/endpoints/search.py">
+      Query Parameters: q (string, required, min length 2)
+      Headers: Authorization: Bearer {token} (required)
+      Response 200: Array of StockSearch objects with id, symbol, company_name, sector, fortune_500_rank, has_recommendation
+      Response 400: Bad Request if query param missing or too short
+      Response 401: Unauthorized if token invalid
+    </interface>
+    <interface name="useStockSearch" kind="React Hook" signature="useStockSearch(query: string)" path="frontend/src/hooks/useStockSearch.ts">
+      Parameters: query (string, min length 2)
+      Returns: { data: StockSearch[], isLoading: boolean, isError: boolean, error: Error | null, refetch: () => void }
+      Configuration: enabled only when query.length >= 2, staleTime 5min, gcTime 10min, debounced 500ms
+    </interface>
+    <interface name="StockSearch" kind="TypeScript Type" signature="interface StockSearch extends Stock { has_recommendation: boolean }" path="frontend/src/types/stock.ts">
+      Extends Stock interface with optional has_recommendation field indicating if recommendation exists for stock
+    </interface>
+    <interface name="search_stocks" kind="Python Function" signature="async def search_stocks(session: AsyncSession, query: str, limit: int = 50) -> list[Stock]" path="backend/app/crud/stocks.py">
+      Existing CRUD function for stock search. Reuse in API endpoint implementation. Uses PostgreSQL ilike for partial matching.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Frontend testing uses Vitest with React Testing Library for unit tests. Backend testing uses pytest with pytest-asyncio for async endpoint tests. E2E testing uses Playwright. Test files co-located with components (__tests__ directories). Follow existing test patterns from useRecommendationDetail.test.ts and test_recommendations_detail_endpoint.py. Test coverage targets: 70%+ for frontend components, 80%+ for backend endpoints.
+    </standards>
+    <locations>
+      <location>frontend/src/components/search/__tests__/StockSearchResults.test.tsx</location>
+      <location>frontend/src/hooks/__tests__/useStockSearch.test.ts</location>
+      <location>backend/tests/test_api/test_stocks_search_endpoint.py</location>
+      <location>frontend/tests/e2e/stock-search.spec.ts</location>
+    </locations>
+    <ideas>
+      <test ac="1">Test search input field appears in navigation or dashboard, is accessible via keyboard, has proper ARIA labels</test>
+      <test ac="2">Test search by exact symbol match (e.g., "AAPL"), partial symbol match (e.g., "AAP"), exact company name (e.g., "Apple"), partial company name (e.g., "App")</test>
+      <test ac="3">Test search results render in list format using shadcn/ui Card or Table component</test>
+      <test ac="4">Test each result displays: symbol, company name, sector, recommendation status badge (if recommendation exists)</test>
+      <test ac="5">Test clicking result with recommendation navigates to /recommendations/{id}, clicking result without recommendation navigates to /stocks/{id} or placeholder</test>
+      <test ac="6">Test partial matches work (e.g., "App" matches "Apple"), case-insensitive matching, typo handling (fuzzy matching if implemented)</test>
+      <test ac="7">Test search completes within 500ms for queries on 500 stocks, verify database indexes exist, verify query optimization</test>
+      <test>Test debouncing: verify API call only triggered after 500ms delay, verify request cancellation for stale queries</test>
+      <test>Test React Query caching: verify search results cached, verify cache invalidation, verify cache hit rate</test>
+      <test>Test error handling: 400 for invalid query, 401 for auth failure, network errors with user-friendly messages</test>
+      <test>Test responsive design: search input and results work on mobile (375px, 414px widths), touch-friendly interactions</test>
+      <test>Test authentication: unauthenticated users redirected to login, authenticated users can search</test>
+      <test>Test empty states: no results message displayed when search returns empty, loading state while fetching</test>
+    </ideas>
+  </tests>
+</story-context>
+
+

@@ -6,10 +6,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Profile from './Profile';
 import * as userPreferencesService from '../services/userPreferences';
 import { useAuth } from '../hooks/useAuth';
+import { useTier } from '../hooks/useTier';
 
 // Mock the services and hooks
 vi.mock('../services/userPreferences');
 vi.mock('../hooks/useAuth');
+vi.mock('../hooks/useTier');
 
 describe('Profile Component', () => {
   let queryClient: QueryClient;
@@ -22,6 +24,13 @@ describe('Profile Component', () => {
         mutations: { retry: false },
       },
     });
+    // default non-premium tier
+    vi.mocked(useTier).mockReturnValue({
+      stockCount: 0,
+      stockLimit: 5,
+      isPremium: false,
+      isLoading: false,
+    } as any);
   });
 
   const renderProfile = () => {
@@ -89,10 +98,16 @@ describe('Profile Component', () => {
       });
 
       vi.spyOn(userPreferencesService, 'getPreferences').mockResolvedValue(null);
+      vi.mocked(useTier).mockReturnValue({
+        stockCount: 0,
+        stockLimit: null,
+        isPremium: true,
+        isLoading: false,
+      } as any);
 
       renderProfile();
 
-      expect(screen.getByText(/premium/i)).toBeInTheDocument();
+      expect(screen.getByText(/premium - unlimited/i)).toBeInTheDocument();
     });
   });
 
@@ -405,7 +420,96 @@ describe('Profile Component', () => {
       renderProfile();
 
       await waitFor(() => {
-        expect(screen.getByText(/failed to load preferences/i)).toBeInTheDocument();
+        expect(screen.getByText(/failed to load/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Recommendation Refresh on Preference Update', () => {
+    it('invalidates recommendations query after preference update', async () => {
+      const user = userEvent.setup();
+      vi.mocked(useAuth).mockReturnValue({
+        user: { id: '1', email: 'test@example.com', tier: 'free' as const, is_verified: true },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+        isLoggingIn: false,
+        isLoggingOut: false,
+        loginError: null,
+      });
+
+      vi.spyOn(userPreferencesService, 'getPreferences').mockResolvedValue(null);
+      vi.spyOn(userPreferencesService, 'updatePreferences').mockResolvedValue({
+        id: 'pref-1',
+        user_id: '1',
+        holding_period: 'weekly',
+        risk_tolerance: 'high',
+        updated_at: '2024-01-01T00:00:00Z',
+      });
+
+      // Spy on invalidateQueries
+      const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+      renderProfile();
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /save preferences/i })).toBeInTheDocument();
+      });
+
+      const holdingPeriodSelect = screen.getByLabelText(/holding period/i) as HTMLSelectElement;
+      await user.selectOptions(holdingPeriodSelect, 'weekly');
+
+      const saveButton = screen.getByRole('button', { name: /save preferences/i });
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        // Verify invalidateQueries was called with recommendations query key
+        expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+          queryKey: ['recommendations', 'current-user'],
+        });
+      });
+    });
+
+
+    it('shows success message indicating recommendations will update', async () => {
+      const user = userEvent.setup();
+      vi.mocked(useAuth).mockReturnValue({
+        user: { id: '1', email: 'test@example.com', tier: 'free' as const, is_verified: true },
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+        isLoggingIn: false,
+        isLoggingOut: false,
+        loginError: null,
+      });
+
+      vi.spyOn(userPreferencesService, 'getPreferences').mockResolvedValue(null);
+      vi.spyOn(userPreferencesService, 'updatePreferences').mockResolvedValue({
+        id: 'pref-1',
+        user_id: '1',
+        holding_period: 'monthly',
+        risk_tolerance: 'medium',
+        updated_at: '2024-01-01T00:00:00Z',
+      });
+
+      renderProfile();
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /save preferences/i })).toBeInTheDocument();
+      });
+
+      const holdingPeriodSelect = screen.getByLabelText(/holding period/i) as HTMLSelectElement;
+      await user.selectOptions(holdingPeriodSelect, 'monthly');
+
+      const saveButton = screen.getByRole('button', { name: /save preferences/i });
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        // Verify success message mentions recommendations will update
+        expect(screen.getByText(/preferences saved successfully/i)).toBeInTheDocument();
+        expect(screen.getByText(/recommendations will update automatically/i)).toBeInTheDocument();
       });
     });
   });

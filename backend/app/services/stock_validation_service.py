@@ -17,7 +17,7 @@ async def validate_stock_completeness(
     session: AsyncSession, expected_count: int = 500
 ) -> dict[str, Any]:
     """
-    Validate that exactly the expected number of stocks exist.
+    Validate that at least the expected number of stocks exist (greater than expected_count).
     
     Returns validation result dict with:
     - valid: bool
@@ -27,7 +27,7 @@ async def validate_stock_completeness(
     """
     actual_count = await get_stock_count(session)
     
-    is_valid = actual_count == expected_count
+    is_valid = actual_count > expected_count
     
     result = {
         "valid": is_valid,
@@ -35,7 +35,7 @@ async def validate_stock_completeness(
         "expected_count": expected_count,
         "message": (
             f"Stock count validation: {actual_count} stocks found, "
-            f"expected {expected_count}"
+            f"expected more than {expected_count}"
         ),
     }
     

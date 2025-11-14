@@ -34,7 +34,6 @@ describe('Navigation', () => {
       </BrowserRouter>
     );
 
-    const nav = container.querySelector('nav');
     const ul = container.querySelector('ul');
     expect(ul).toHaveClass('flex-col', 'md:flex-row');
   });

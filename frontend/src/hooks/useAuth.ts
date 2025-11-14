@@ -20,7 +20,6 @@ export function useAuth() {
     data: user,
     isLoading,
     isError,
-    error,
   } = useQuery<User>({
     queryKey: AUTH_QUERY_KEY,
     queryFn: getCurrentUser,

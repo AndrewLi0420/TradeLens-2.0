@@ -1,0 +1,228 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>6</storyId>
+    <title>Recommendation Filtering & Sorting</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-11T04:16:35Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/3-6-recommendation-filtering-sorting.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user</asA>
+    <iWant>filter and sort recommendations by various criteria</iWant>
+    <soThat>I can focus on recommendations most relevant to my investment style</soThat>
+    <tasks>
+      <task>Create FilterSortControls component (AC: 1, 2, 3, 4, 5, 6)</task>
+      <task>Integrate FilterSortControls into Dashboard (AC: 1, 2, 3, 4, 5, 6)</task>
+      <task>Update useRecommendations hook to support filtering and sorting (AC: 1, 2, 3, 7)</task>
+      <task>Verify backend API supports all filter/sort parameters (AC: 1, 2, 3, 7)</task>
+      <task>Implement filter state persistence during session (AC: 4)</task>
+      <task>Add visual indicators for active filters (AC: 6)</task>
+      <task>Ensure free tier stock limit respected with filters (AC: 7)</task>
+      <task>Testing: Unit tests, integration tests, E2E tests</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">Filter by: holding period (daily/weekly/monthly), risk level (low/medium/high), confidence threshold</criterion>
+    <criterion id="AC2">Sort by: date (newest first), confidence (highest first), risk (lowest first), sentiment (most positive first)</criterion>
+    <criterion id="AC3">Filters and sorts work together (combined filtering)</criterion>
+    <criterion id="AC4">Filter state persists during session</criterion>
+    <criterion id="AC5">Clear filters button to reset</criterion>
+    <criterion id="AC6">Active filters displayed visually</criterion>
+    <criterion id="AC7">Free tier users see filtered results within their stock limit</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>dist/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR018: Recommendation filtering and sorting</section>
+        <snippet>Functional requirement FR018 defines recommendation filtering and sorting capabilities. Users can filter by holding period, risk level, and confidence threshold, and sort by date, confidence, risk, or sentiment. The PRD emphasizes Time-Efficient Information Access principle: filtering and sorting should enable quick access to relevant recommendations, minimizing clicks to find desired information.</snippet>
+      </doc>
+      <doc>
+        <path>dist/tech-spec-epic-3.md</path>
+        <title>Epic 3 Technical Specification</title>
+        <section>Story 3.6: Recommendation filtering & sorting</section>
+        <snippet>Tech spec defines detailed acceptance criteria, filter and sort workflow specification, and non-functional requirements. Filter/sort operations must have &lt;300ms response time. The spec outlines FilterSortControls component design, integration with Dashboard, useRecommendations hook updates, and backend API verification requirements.</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture</title>
+        <section>Pattern 3: Tier-Aware Recommendation Pre-Filtering</section>
+        <snippet>Architecture defines tier-aware filtering pattern: free tier users see only recommendations for their 5 tracked stocks, while premium users see all recommendations. Custom filters apply after tier filtering, not before. Frontend uses React Query for efficient caching and optimistic updates.</snippet>
+      </doc>
+      <doc>
+        <path>dist/epics.md</path>
+        <title>Epics Document</title>
+        <section>Story 3.6: Recommendation filtering & sorting</section>
+        <snippet>Epic 3 story definition with user story and acceptance criteria. Story enables users to filter and sort recommendations by various criteria to focus on recommendations most relevant to their investment style.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/3-5-educational-tooltips-inline-help.md</path>
+        <title>Story 3.5: Educational Tooltips</title>
+        <section>Dev Agent Record - Learnings</section>
+        <snippet>Story 3.5 established component patterns: shadcn/ui components available (Select, Input, Button, Badge), component organization (feature-specific in recommendations/ folder), styling consistency (black background with financial blue/green accents), React Query patterns (5min staleTime, 10min cacheTime), and comprehensive testing patterns.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>frontend/src/components/recommendations/FilterSortControls.tsx</path>
+        <kind>component</kind>
+        <symbol>FilterSortControls</symbol>
+        <lines>1-177</lines>
+        <reason>Main component for filtering and sorting controls. Already exists and implements filter controls (holding period, risk level, confidence threshold), sort controls (sort field, sort direction), clear filters button, and active filter badges. Uses shadcn/ui components (Select, Input, Button, Badge) with Tailwind CSS styling.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/pages/Dashboard.tsx</path>
+        <kind>page</kind>
+        <symbol>Dashboard</symbol>
+        <lines>1-117</lines>
+        <reason>Dashboard page component that integrates FilterSortControls. Manages filter state, connects to useRecommendations hook, and displays filtered recommendations. Already includes FilterSortControls integration and filter state management with React Query.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/hooks/useRecommendations.ts</path>
+        <kind>hook</kind>
+        <symbol>useRecommendations</symbol>
+        <lines>1-36</lines>
+        <reason>React Query hook for fetching recommendations. Accepts GetRecommendationsParams for filtering and sorting. Uses React Query 5.x with 5min staleTime and 10min cacheTime. Query key includes params for cache persistence during session.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/services/recommendations.ts</path>
+        <kind>service</kind>
+        <symbol>getRecommendations</symbol>
+        <lines>46-72</lines>
+        <reason>API service function that maps filter/sort params to query parameters. Supports holding_period, risk_level, confidence_min, sort_by, and sort_direction query params. Calls GET /api/v1/recommendations endpoint with query string.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/api/v1/endpoints/recommendations.py</path>
+        <kind>endpoint</kind>
+        <symbol>list_recommendations</symbol>
+        <lines>23-55</lines>
+        <reason>FastAPI endpoint GET /api/v1/recommendations that accepts query params: holding_period (daily/weekly/monthly), risk_level (low/medium/high), confidence_min (0.0-1.0), sort_by (date/confidence/risk/sentiment), sort_direction (asc/desc). Endpoint applies tier-aware filtering and calls get_recommendations CRUD function.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/crud/recommendations.py</path>
+        <kind>crud</kind>
+        <symbol>get_recommendations</symbol>
+        <lines>18-115</lines>
+        <reason>CRUD function that implements tier-aware filtering (free tier: 5 stocks max), applies user preferences as defaults, filters by risk_level and confidence_min, and sorts by date/confidence/risk/sentiment. Handles NULL sentiment_score values in sorting. Returns filtered and sorted recommendations.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/recommendations/RecommendationList.tsx</path>
+        <kind>component</kind>
+        <symbol>RecommendationList</symbol>
+        <reason>Component that displays list of recommendations. Used by Dashboard to render filtered recommendations. Receives recommendations array as prop.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/components/common/TierStatus.tsx</path>
+        <kind>component</kind>
+        <symbol>TierStatus</symbol>
+        <reason>Component that displays user tier status and stock limit. Used in Dashboard to show tier information. Helps users understand tier limits when filtering.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="Node.js">
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="@tanstack/react-query" version="^5.90.6" />
+        <package name="axios" version="^1.13.1" />
+        <package name="react-router-dom" version="^6.30.1" />
+        <package name="@radix-ui/react-select" version="^2.2.6" />
+        <package name="@radix-ui/react-popover" version="^1.1.15" />
+        <package name="tailwindcss" version="^4.1.16" />
+      </ecosystem>
+      <ecosystem name="Python">
+        <package name="fastapi" version=">=0.109.2" />
+        <package name="sqlalchemy" version=">=2.0.0,&lt;3.0.0" />
+        <package name="pydantic" version=">=1.10.6" />
+        <package name="asyncpg" version=">=0.29.0" />
+      </ecosystem>
+      <ecosystem name="Testing">
+        <package name="vitest" version="^3.2.4" />
+        <package name="@testing-library/react" version="^16.3.0" />
+        <package name="@testing-library/user-event" version="^14.6.1" />
+        <package name="@playwright/test" version="^1.56.1" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Follow UX Design Principles (Time-Efficient Information Access) from PRD: Filtering and sorting should enable quick access to relevant recommendations, minimizing clicks to find desired information.</constraint>
+    <constraint>Backend filtering and sorting already implemented in backend/app/crud/recommendations.py get_recommendations function - verify all required filters and sorts are supported before implementing frontend.</constraint>
+    <constraint>Filter state persistence: Use React Query cache to persist during session (not localStorage) - filters reset on page reload per tech spec open question resolution.</constraint>
+    <constraint>Tier-aware filtering: Backend already handles tier filtering (free tier: 5 stocks max) - ensure custom filters apply after tier filtering, not before.</constraint>
+    <constraint>Follow existing component patterns from Story 3.1-3.5: Use shadcn/ui components, Tailwind CSS styling, React Query for data fetching.</constraint>
+    <constraint>Filter UI design: Use dropdown selects for holding period and risk level, number input for confidence threshold, dropdown + toggle for sort controls.</constraint>
+    <constraint>Active filter indicators: Use shadcn/ui Badge component to show current filter values - helps users understand what filters are applied.</constraint>
+    <constraint>Combined filtering: Ensure all filters and sorts work together - test edge cases (e.g., filter by risk=low, sort by confidence desc, filter by confidence_min=0.7).</constraint>
+    <constraint>Component organization: Place FilterSortControls in frontend/src/components/recommendations/ folder (feature-specific components).</constraint>
+    <constraint>Performance requirement: Filter/sort operations must have &lt;300ms response time per tech spec non-functional requirements.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>GET /api/v1/recommendations</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/recommendations?holding_period={daily|weekly|monthly}&amp;risk_level={low|medium|high}&amp;confidence_min={0.0-1.0}&amp;sort_by={date|confidence|risk|sentiment}&amp;sort_direction={asc|desc}</signature>
+      <path>backend/app/api/v1/endpoints/recommendations.py</path>
+    </interface>
+    <interface>
+      <name>getRecommendations</name>
+      <kind>TypeScript function</kind>
+      <signature>getRecommendations(params?: GetRecommendationsParams): Promise&lt;Recommendation[]&gt;</signature>
+      <path>frontend/src/services/recommendations.ts</path>
+    </interface>
+    <interface>
+      <name>useRecommendations</name>
+      <kind>React hook</kind>
+      <signature>useRecommendations(params?: GetRecommendationsParams): { data: Recommendation[], isLoading: boolean, isError: boolean, error: Error | null, refetch: () =&gt; void }</signature>
+      <path>frontend/src/hooks/useRecommendations.ts</path>
+    </interface>
+    <interface>
+      <name>GetRecommendationsParams</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface GetRecommendationsParams extends RecommendationFilters, RecommendationSort { holding_period?: 'daily' | 'weekly' | 'monthly', risk_level?: 'low' | 'medium' | 'high', confidence_min?: number, sort_by?: 'date' | 'confidence' | 'risk' | 'sentiment', sort_direction?: 'asc' | 'desc' }</signature>
+      <path>frontend/src/services/recommendations.ts</path>
+    </interface>
+    <interface>
+      <name>FilterSortControlsProps</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface FilterSortControlsProps { filters: GetRecommendationsParams, onFiltersChange: (filters: GetRecommendationsParams) =&gt; void }</signature>
+      <path>frontend/src/components/recommendations/FilterSortControls.tsx</path>
+    </interface>
+    <interface>
+      <name>get_recommendations</name>
+      <kind>Python async function</kind>
+      <signature>async def get_recommendations(session: AsyncSession, user_id: UUID, holding_period: Literal["daily", "weekly", "monthly"] | None = None, risk_level: Literal["low", "medium", "high"] | None = None, confidence_min: float | None = None, sort_by: Literal["date", "confidence", "risk", "sentiment"] = "date", sort_direction: Literal["asc", "desc"] = "desc") -&gt; list[Recommendation]</signature>
+      <path>backend/app/crud/recommendations.py</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Testing uses Vitest for unit tests, @testing-library/react for component testing, and Playwright for E2E tests. Unit tests should mock React Query hooks and API services. Integration tests should test component interactions with real hooks. E2E tests should verify user workflows. Test files follow pattern: ComponentName.test.tsx for components, hookName.test.ts for hooks. Tests should verify filter state management, sort state management, combined filtering, filter persistence, clear filters functionality, and tier-aware filtering.</standards>
+    <locations>
+      <location>frontend/src/components/recommendations/__tests__/FilterSortControls.test.tsx</location>
+      <location>frontend/src/hooks/__tests__/useRecommendations.test.ts</location>
+      <location>frontend/src/pages/__tests__/Dashboard.test.tsx</location>
+      <location>frontend/tests/e2e/filtering-sorting.spec.ts</location>
+    </locations>
+    <ideas>
+      <idea criterion="AC1">Test filter controls render correctly: holding period dropdown, risk level dropdown, confidence threshold input. Verify each filter updates state correctly.</idea>
+      <idea criterion="AC2">Test sort controls render correctly: sort field dropdown, sort direction toggle. Verify sort updates recommendations order.</idea>
+      <idea criterion="AC3">Test combined filtering: apply multiple filters (holding_period=daily, risk_level=low, confidence_min=0.7) + sort (sort_by=confidence, sort_direction=desc). Verify all filters and sort work together.</idea>
+      <idea criterion="AC4">Test filter state persistence: apply filters, navigate away from Dashboard, navigate back. Verify filters persist in React Query cache during session.</idea>
+      <idea criterion="AC5">Test clear filters button: apply multiple filters, click clear button. Verify all filters reset to defaults (sort_by=date, sort_direction=desc, no filters).</idea>
+      <idea criterion="AC6">Test active filter indicators: apply filters, verify badges display current filter values. Verify badges update when filters change.</idea>
+      <idea criterion="AC7">Test free tier filtering: create free tier user with 5 tracked stocks, apply filters. Verify filtered results only show recommendations for tracked stocks. Test premium user sees all recommendations regardless of filters.</idea>
+      <idea>Test useRecommendations hook: verify hook accepts filter/sort params, maps to API query params correctly, refetches when params change, handles loading and error states.</idea>
+      <idea>Test FilterSortControls component: verify component renders all controls, handles filter changes, displays active filter badges, clears filters correctly.</idea>
+      <idea>Test Dashboard integration: verify FilterSortControls integrated correctly, filter state connected to useRecommendations, recommendations update when filters change.</idea>
+      <idea>E2E test: User applies filters, sees filtered recommendations, changes sort order, recommendations reorder, clears filters, sees all recommendations again.</idea>
+    </ideas>
+  </tests>
+</story-context>
+

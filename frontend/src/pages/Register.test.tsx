@@ -398,7 +398,7 @@ describe('Register Component', () => {
 
     it('shows loading state during submission', async () => {
       const user = userEvent.setup();
-      const mockRegister = vi.spyOn(authService, 'register').mockImplementation(
+      vi.spyOn(authService, 'register').mockImplementation(
         () => new Promise((resolve) => setTimeout(() => resolve({ id: 'test', email: 'test@example.com', is_verified: false }), 100))
       );
 

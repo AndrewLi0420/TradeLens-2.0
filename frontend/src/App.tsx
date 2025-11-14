@@ -4,6 +4,9 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import Historical from './pages/Historical';
+import RecommendationDetail from './pages/RecommendationDetail';
+import StockDetail from './pages/StockDetail';
+import Search from './pages/Search';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import Layout from './components/common/Layout';
 import './App.css';
@@ -41,6 +44,36 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Profile />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recommendations/:id"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <RecommendationDetail />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stocks/:id"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <StockDetail />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Search />
               </Layout>
             </ProtectedRoute>
           }

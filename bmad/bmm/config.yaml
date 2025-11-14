@@ -3,7 +3,7 @@
 # Version: 6.0.0-alpha.3
 # Date: 2025-10-31T04:05:50.385Z
 
-project_name: Vibecoding
+project_name: TradeLens
 include_game_planning: true
 user_skill_level: intermediate
 tech_docs: '{project-root}/docs'
