@@ -57,6 +57,59 @@ async def recommendations_job(daily_target_count: int = 10) -> None:
         datetime.now(timezone.utc).isoformat(),
         daily_target_count,
     )
+    
+    # Diagnostic: Check model module state and model availability
+    import sys
+    import inspect
+    from app.services.ml_service import are_models_loaded
+    
+    logger.info("=== recommendations_job Model Diagnostics ===")
+    logger.info("ML service module in sys.modules: %s", 'app.services.ml_service' in sys.modules)
+    if 'app.services.ml_service' in sys.modules:
+        ml_module = sys.modules['app.services.ml_service']
+        logger.info("ML service module object: %s", ml_module)
+        logger.info("ML service module __file__: %s", getattr(ml_module, '__file__', 'N/A'))
+        
+        # Check if model variables exist in module
+        has_nn = hasattr(ml_module, '_neural_network_model')
+        has_rf = hasattr(ml_module, '_random_forest_model')
+        logger.info("Module has _neural_network_model attribute: %s", has_nn)
+        logger.info("Module has _random_forest_model attribute: %s", has_rf)
+        
+        if has_nn:
+            nn_model = getattr(ml_module, '_neural_network_model', None)
+            logger.info("_neural_network_model is None: %s", nn_model is None)
+            logger.info("_neural_network_model ID: %s", id(nn_model) if nn_model is not None else "None")
+        
+        if has_rf:
+            rf_model = getattr(ml_module, '_random_forest_model', None)
+            logger.info("_random_forest_model is None: %s", rf_model is None)
+            logger.info("_random_forest_model ID: %s", id(rf_model) if rf_model is not None else "None")
+    
+    # Check are_models_loaded() function
+    models_loaded = are_models_loaded()
+    logger.info("are_models_loaded() returns: %s", models_loaded)
+    
+    # Check app.state if available (will be set in lifetime.py)
+    try:
+        from app.main import app
+        if hasattr(app, 'state') and hasattr(app.state, 'models'):
+            models = app.state.models
+            logger.info("app.state.models available: %s", models is not None)
+            if models:
+                logger.info("app.state.models keys: %s", list(models.keys()))
+                nn_in_state = models.get("neural_network") is not None
+                rf_in_state = models.get("random_forest") is not None
+                logger.info("Neural network in app.state: %s", nn_in_state)
+                logger.info("Random forest in app.state: %s", rf_in_state)
+                if nn_in_state:
+                    logger.info("Neural network ID from app.state: %s", id(models["neural_network"]))
+                if rf_in_state:
+                    logger.info("Random forest ID from app.state: %s", id(models["random_forest"]))
+        else:
+            logger.warning("app.state.models not available in recommendations_job")
+    except Exception as e:
+        logger.warning("Could not access app.state in recommendations_job: %s", e)
 
     start = time.time()
     engine = None

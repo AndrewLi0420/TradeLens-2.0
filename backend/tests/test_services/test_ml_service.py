@@ -793,3 +793,125 @@ async def test_predict_stock_model_failure_graceful_degradation(tmp_path):
         assert result["model_used"] == "random_forest"
         assert result["signal"] in ["buy", "sell", "hold"]
 
+
+def test_initialize_models_logs_file_paths_versions_metadata(tmp_path, caplog):
+    """Test that initialize_models() logs file paths, versions, and metadata."""
+    import logging
+    caplog.set_level(logging.INFO)
+    
+    # Create test models
+    nn_model = NeuralNetworkModel(input_size=9)
+    rf_model = train_random_forest(np.random.rand(50, 9), np.random.randint(0, 3, size=50))
+    save_model(nn_model, "neural_network", "test_v1", base_path=tmp_path)
+    save_model(rf_model, "random_forest", "test_v1", base_path=tmp_path)
+    
+    # Initialize models
+    results = initialize_models(base_path=tmp_path)
+    
+    # Check that results include file paths and metadata
+    assert results["neural_network"]["loaded"] is True
+    assert results["neural_network"]["version"] == "test_v1"
+    assert results["neural_network"]["file_path"] is not None
+    assert results["neural_network"]["metadata"] is not None
+    
+    assert results["random_forest"]["loaded"] is True
+    assert results["random_forest"]["version"] == "test_v1"
+    assert results["random_forest"]["file_path"] is not None
+    assert results["random_forest"]["metadata"] is not None
+    
+    # Check that logs include file paths and versions
+    log_messages = caplog.text
+    assert "test_v1" in log_messages
+    assert "file path" in log_messages.lower() or "file_path" in log_messages.lower()
+
+
+def test_are_models_loaded_returns_correct_status(tmp_path):
+    """Test that are_models_loaded() returns correct status."""
+    from app.services.ml_service import are_models_loaded
+    
+    # Initially no models loaded
+    assert are_models_loaded() is False
+    
+    # Create and initialize models
+    nn_model = NeuralNetworkModel(input_size=9)
+    rf_model = train_random_forest(np.random.rand(50, 9), np.random.randint(0, 3, size=50))
+    save_model(nn_model, "neural_network", "test_v1", base_path=tmp_path)
+    save_model(rf_model, "random_forest", "test_v1", base_path=tmp_path)
+    initialize_models(base_path=tmp_path)
+    
+    # Now models should be loaded
+    assert are_models_loaded() is True
+
+
+def test_load_model_error_handling_with_file_paths(tmp_path):
+    """Test that load_model() provides clear error messages with file paths."""
+    # Test file not found error
+    with pytest.raises(FileNotFoundError) as exc_info:
+        load_model("neural_network", version="nonexistent", base_path=tmp_path)
+    
+    error_msg = str(exc_info.value)
+    assert "neural_network" in error_msg.lower()
+    assert "not found" in error_msg.lower() or "file not found" in error_msg.lower()
+    
+    # Test directory not found error
+    nonexistent_path = tmp_path / "nonexistent_dir"
+    with pytest.raises(FileNotFoundError) as exc_info:
+        load_model("neural_network", base_path=nonexistent_path)
+    
+    error_msg = str(exc_info.value)
+    assert "directory not found" in error_msg.lower() or "not found" in error_msg.lower()
+    assert str(nonexistent_path) in error_msg
+
+
+def test_load_model_handles_corrupted_files(tmp_path):
+    """Test that load_model() handles corrupted model files gracefully."""
+    # Create a corrupted model file
+    corrupted_path = tmp_path / "neural_network_test_v1.pth"
+    corrupted_path.write_text("corrupted data")
+    
+    # Create metadata file
+    metadata_path = tmp_path / "neural_network_test_v1_metadata.json"
+    import json
+    metadata_path.write_text(json.dumps({
+        "model_type": "neural_network",
+        "version": "test_v1",
+        "input_size": 9,
+        "hidden_size1": 64,
+        "hidden_size2": 32,
+        "num_classes": 3,
+    }))
+    
+    # Should raise RuntimeError with clear error message
+    with pytest.raises(RuntimeError) as exc_info:
+        load_model("neural_network", version="test_v1", base_path=tmp_path)
+    
+    error_msg = str(exc_info.value)
+    assert "failed to load" in error_msg.lower() or "corrupted" in error_msg.lower()
+    assert str(corrupted_path) in error_msg or "neural_network_test_v1.pth" in error_msg
+
+
+def test_load_model_handles_missing_metadata_fields(tmp_path):
+    """Test that load_model() handles missing metadata fields."""
+    # Create model file
+    nn_model = NeuralNetworkModel(input_size=9)
+    import torch
+    model_path = tmp_path / "neural_network_test_v1.pth"
+    torch.save(nn_model.state_dict(), model_path)
+    
+    # Create incomplete metadata file
+    metadata_path = tmp_path / "neural_network_test_v1_metadata.json"
+    import json
+    metadata_path.write_text(json.dumps({
+        "model_type": "neural_network",
+        "version": "test_v1",
+        # Missing required fields
+    }))
+    
+    # Should raise ValueError with clear error message
+    with pytest.raises(ValueError) as exc_info:
+        load_model("neural_network", version="test_v1", base_path=tmp_path)
+    
+    error_msg = str(exc_info.value)
+    assert "incomplete" in error_msg.lower() or "missing" in error_msg.lower()
+    assert "metadata" in error_msg.lower()
+

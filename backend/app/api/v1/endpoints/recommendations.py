@@ -31,10 +31,10 @@ async def list_recommendations(
     session: AsyncSession = Depends(get_db),
 ) -> list[RecommendationRead]:
     """
-    Get recommendations for the current user with tier-aware filtering.
+    Get recommendations for the current user.
     
-    - Free tier: Only returns recommendations for tracked stocks (max 5)
-    - Premium tier: Returns all recommendations
+    NOTE: Tier filtering is currently bypassed - all recommendations are shown.
+    
     - Applies user preferences as default filters if query params not provided
     - Supports filtering by holding_period, risk_level, confidence_min
     - Supports sorting by date, confidence, risk, sentiment
@@ -62,12 +62,11 @@ async def get_recommendation(
     session: AsyncSession = Depends(get_db),
 ) -> RecommendationRead:
     """
-    Get a single recommendation by ID with tier-aware access control.
+    Get a single recommendation by ID.
     
-    - Free tier: Only returns recommendation if it's for a tracked stock (max 5)
-    - Premium tier: Returns recommendation if it exists and belongs to user
+    NOTE: Tier filtering is currently bypassed - all recommendations are accessible.
+    
     - Returns 404 if recommendation not found
-    - Returns 403 if free tier user tries to access untracked stock recommendation
     """
     try:
         recommendation = await get_recommendation_by_id(
@@ -77,30 +76,11 @@ async def get_recommendation(
         )
         
         if recommendation is None:
-            # Check if recommendation exists but user doesn't have access
-            # (e.g., free tier user trying to access untracked stock)
-            from app.models.recommendation import Recommendation
-            from sqlalchemy import select
-            from sqlalchemy.orm import selectinload
-            
-            check_query = select(Recommendation).options(
-                selectinload(Recommendation.stock)
-            ).where(Recommendation.id == id)
-            check_result = await session.execute(check_query)
-            exists = check_result.scalar_one_or_none() is not None
-            
-            if exists:
-                # Recommendation exists but user doesn't have access (tier restriction)
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied: This recommendation is not available for your tier"
-                )
-            else:
-                # Recommendation doesn't exist
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Recommendation not found"
-                )
+            # Recommendation not found
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Recommendation not found"
+            )
         
         return recommendation
     except HTTPException:

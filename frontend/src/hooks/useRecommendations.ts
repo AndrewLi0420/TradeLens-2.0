@@ -33,7 +33,18 @@ export function useRecommendations(params?: GetRecommendationsParams) {
     refetch,
   } = useQuery({
     queryKey: [...RECOMMENDATIONS_QUERY_KEY, effectiveParams],
-    queryFn: () => getRecommendations(effectiveParams),
+    queryFn: async () => {
+      const result = await getRecommendations(effectiveParams);
+      // Debug logging in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[useRecommendations] Fetched recommendations:', {
+          count: result.length,
+          params: effectiveParams,
+          recommendations: result,
+        });
+      }
+      return result;
+    },
     retry: false,
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes (React Query v5)

@@ -1,0 +1,145 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>1</storyId>
+    <title>ML Model Loading Verification & Diagnostics</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/4-1-ml-model-loading-verification-diagnostics.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>As a developer</asA>
+    <iWant>I want comprehensive diagnostics and verification for ML model loading at startup</iWant>
+    <soThat>so that I can identify and fix model loading issues before recommendation generation fails</soThat>
+    <tasks>
+      <task>Enhance model loading diagnostics in lifetime.py (AC: 1, 2, 4, 5, 6, 8)</task>
+      <task>Enhance ML service model loading functions (AC: 2, 4, 5)</task>
+      <task>Create health check endpoint (AC: 3, 7)</task>
+      <task>Update recommendation generation to check model status (AC: 6)</task>
+      <task>Testing</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Enhanced model loading diagnostics in `lifetime.py` startup logs model file paths, versions, and metadata during loading</criterion>
+    <criterion id="2">Verify models are accessible from both module globals (`_neural_network_model`, `_random_forest_model`) and `app.state`</criterion>
+    <criterion id="3">Health check endpoint `GET /api/v1/health/ml-models` returns model status (loaded, version, error, accessible)</criterion>
+    <criterion id="4">Model accessibility test: verify models can be used for inference after loading (test prediction call)</criterion>
+    <criterion id="5">Clear error messages when models fail to load (file not found, version mismatch, etc.) with file paths</criterion>
+    <criterion id="6">Fallback mechanism: if models fail to load, log detailed error and prevent generation (don't crash startup)</criterion>
+    <criterion id="7">Model loading status persisted and queryable via health check endpoint</criterion>
+    <criterion id="8">Startup fails gracefully if models required but not available (configurable; default: log warning, continue)</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-4.md" title="Epic 4 Technical Specification" section="Story 4.1: ML Model Loading Verification & Diagnostics">
+        Detailed design for ML model loading diagnostics including startup sequence, error handling, health check endpoint API contract, and service enhancements. Specifies model accessibility verification from module globals and app.state, test prediction calls, and graceful degradation patterns.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Implementation Patterns">
+        Architecture patterns for error handling, health check endpoints, and graceful degradation. Specifies API contract patterns with consistent error response formats and standard HTTP status codes (200 OK, 503 Service Unavailable).
+      </doc>
+      <doc path="dist/epics.md" title="Epic Definitions" section="Epic 4: Recommendation Generation Reliability & Filtering Fixes">
+        Epic overview and story definitions. Story 4.1 focuses on ML model loading verification and diagnostics to ensure models are accessible before recommendation generation.
+      </doc>
+      <doc path="docs/stories/2-6-ml-model-inference-service.md" title="Story 2.6: ML Model Inference Service" section="Implementation">
+        Previous story implementing ML model inference service. Provides context on model loading patterns, module globals usage, and inference implementation.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="backend/app/lifetime.py" kind="startup" symbol="startup()" lines="16-207" reason="FastAPI startup lifecycle handler that initializes ML models. Currently includes diagnostic logging for model paths but needs enhanced logging for versions, metadata, and accessibility verification." />
+      <artifact path="backend/app/services/ml_service.py" kind="service" symbol="initialize_models()" lines="825-960" reason="Main model loading function that loads neural network and Random Forest models. Returns status dict with loaded, version, error fields. Needs enhanced error messages and accessibility verification." />
+      <artifact path="backend/app/services/ml_service.py" kind="service" symbol="are_models_loaded()" lines="1055-1066" reason="Verification function that checks if at least one model is loaded. Checks both module globals and app.state fallback. Already implemented but needs to be called during startup verification." />
+      <artifact path="backend/app/services/ml_service.py" kind="service" symbol="_neural_network_model" lines="819" reason="Module global variable storing loaded neural network model. Needs verification that it's accessible after loading in thread pool executor." />
+      <artifact path="backend/app/services/ml_service.py" kind="service" symbol="_random_forest_model" lines="821" reason="Module global variable storing loaded Random Forest model. Needs verification that it's accessible after loading in thread pool executor." />
+      <artifact path="backend/app/services/ml_service.py" kind="service" symbol="load_model()" lines="700-820" reason="Model loading function that loads model artifacts from disk. Needs enhanced error handling with detailed error messages including file paths." />
+      <artifact path="backend/app/services/recommendation_service.py" kind="service" symbol="generate_recommendations()" lines="1-735" reason="Recommendation generation service that uses ML models for predictions. Needs to check model status via are_models_loaded() before generation to prevent failures." />
+      <artifact path="backend/app/health.py" kind="endpoint" symbol="check_health()" lines="24-42" reason="Existing health check endpoint for database status. New ml-models endpoint should follow similar pattern with model status checks." />
+      <artifact path="backend/app/api/v1/__init__.py" kind="router" symbol="API router" lines="1-3" reason="API v1 router package. New health endpoint needs to be registered here or in main.py." />
+      <artifact path="backend/app/main.py" kind="application" symbol="get_application()" lines="23-79" reason="FastAPI application factory. Registers routers including health_check_router. New ml-models endpoint should be added to health router." />
+    </code>
+    <interfaces>
+      <interface name="GET /api/v1/health/ml-models" kind="REST endpoint" signature="GET /api/v1/health/ml-models
+Response: {
+  &quot;neural_network&quot;: {
+    &quot;loaded&quot;: bool,
+    &quot;version&quot;: str | null,
+    &quot;error&quot;: str | null,
+    &quot;accessible&quot;: bool
+  },
+  &quot;random_forest&quot;: {
+    &quot;loaded&quot;: bool,
+    &quot;version&quot;: str | null,
+    &quot;error&quot;: str | null,
+    &quot;accessible&quot;: bool
+  }
+}
+Status Codes: 200 (OK), 503 (Service Unavailable if no models loaded)" path="backend/app/api/v1/endpoints/health.py" />
+      <interface name="initialize_models()" kind="function signature" signature="def initialize_models(base_path: str | Path | None = None) -&gt; dict[str, Any]:
+    Returns: {
+        &quot;neural_network&quot;: {
+            &quot;loaded&quot;: bool,
+            &quot;version&quot;: str | None,
+            &quot;error&quot;: str | None
+        },
+        &quot;random_forest&quot;: {
+            &quot;loaded&quot;: bool,
+            &quot;version&quot;: str | None,
+            &quot;error&quot;: str | None
+        }
+    }" path="backend/app/services/ml_service.py" />
+      <interface name="are_models_loaded()" kind="function signature" signature="def are_models_loaded() -&gt; bool:
+    Returns: True if at least one model is loaded and accessible, False otherwise
+    Checks both module globals and app.state fallback" path="backend/app/services/ml_service.py" />
+      <interface name="app.state.models" kind="application state" signature="app.state.models = {
+    &quot;neural_network&quot;: model_object | None,
+    &quot;neural_network_metadata&quot;: dict | None,
+    &quot;random_forest&quot;: model_object | None,
+    &quot;random_forest_metadata&quot;: dict | None
+}" path="backend/app/lifetime.py" />
+    </interfaces>
+    <dependencies>
+      <dependency ecosystem="python">
+        <package name="fastapi" version="^0.109.2" />
+        <package name="pydantic" version="^1.10.6" />
+        <package name="torch" version="latest" />
+        <package name="scikit-learn" version="latest" />
+        <package name="sqlalchemy" version="2.0.x" />
+      </dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Model loading occurs at FastAPI startup in `lifetime.py:startup()` using thread pool executor (non-blocking). Models must be cached in module globals (`_neural_network_model`, `_random_forest_model`) and stored in `app.state` for dependency injection.</constraint>
+    <constraint>Model files stored in `backend/ml-models/` directory with naming pattern `{model_type}_{timestamp}.{ext}` (`.pth` for neural network, `.pkl` for Random Forest). Metadata JSON files exist alongside model artifacts.</constraint>
+    <constraint>Health check endpoint follows API contract patterns from architecture.md: consistent error response formats, standard HTTP status codes (200 OK, 503 Service Unavailable).</constraint>
+    <constraint>Error handling strategy: Graceful degradation preferred. Log detailed error with file paths, mark models as not loaded, continue startup. Generation will fail gracefully if models not loaded (checked via `are_models_loaded()`).</constraint>
+    <constraint>Model accessibility verification: After loading, perform test prediction call to verify models can be used for inference. This ensures models are not just loaded but functional.</constraint>
+    <constraint>Configuration: Add configurable startup behavior (environment variable or config setting) to control whether startup fails if models required but not available. Default: log warning, continue startup (graceful degradation).</constraint>
+    <constraint>Follow architecture patterns from architecture.md: Enhanced Error Handling with Diagnostics (extending Pattern 4) for graceful degradation and detailed error tracking, Health Check Endpoints for model and service status verification.</constraint>
+    <constraint>Health check endpoint: Create new file `backend/app/api/v1/endpoints/health.py` following existing endpoint patterns in `backend/app/api/v1/endpoints/`.</constraint>
+    <constraint>ML service enhancements: Update existing `backend/app/services/ml_service.py` with enhanced error handling and `are_models_loaded()` function (already exists, needs to be called during startup).</constraint>
+    <constraint>Lifetime startup: Update existing `backend/app/lifetime.py` with enhanced diagnostics logging.</constraint>
+    <constraint>Alignment with unified project structure: Follow existing patterns for API endpoints, services, and startup lifecycle. No structural changes required.</constraint>
+  </constraints>
+
+  <tests>
+    <standards>Testing follows pytest framework with async test fixtures. Unit tests for model loading functions, integration tests for startup sequence and model accessibility, E2E tests for health check endpoint. Test coverage goal: 90%+ for new/enhanced functions. Use test fixtures from `backend/tests/conftest.py` for database setup. Mock external services where appropriate.</standards>
+    <locations>Unit tests: `backend/tests/test_services/test_ml_service.py`, `backend/tests/test_api/test_health.py`. Integration tests: `backend/tests/test_services/`, `backend/tests/test_lifetime.py`. E2E tests: `backend/tests/test_api/test_health.py`. Performance tests: `backend/tests/test_performance/` (new directory).</locations>
+    <ideas>
+      <idea criterion="1">Unit test: `initialize_models()` logs file paths, versions, metadata. Mock logger, call function, verify log calls include expected information.</idea>
+      <idea criterion="2">Integration test: After `lifetime.py:startup()`, verify models accessible from module globals (`_neural_network_model`, `_random_forest_model`) and `app.state`. Check both storage locations.</idea>
+      <idea criterion="3">E2E test: Call `GET /api/v1/health/ml-models` endpoint, verify response format matches spec, verify status codes (200 when loaded, 503 when not loaded).</idea>
+      <idea criterion="4">Unit test: After model loading, perform test prediction call with sample feature vector. Verify prediction succeeds without errors.</idea>
+      <idea criterion="5">Unit test: Test `load_model()` with invalid file paths, missing files, corrupted files. Verify error messages include file paths and clear error descriptions.</idea>
+      <idea criterion="6">Integration test: Simulate model loading failure (remove model files), verify startup continues without crashing, verify error logged, verify models marked as not loaded.</idea>
+      <idea criterion="7">E2E test: Call health check endpoint after startup, verify model status persisted and queryable. Test with models loaded and models not loaded scenarios.</idea>
+      <idea criterion="8">Integration test: Test startup with models missing, verify graceful degradation (log warning, continue startup). Test configurable behavior if environment variable set.</idea>
+      <idea criterion="general">Performance test: Verify model loading completes within &lt;30 seconds (non-blocking). Measure startup time with models present.</idea>
+      <idea criterion="general">Integration test: Verify `are_models_loaded()` returns correct status after startup. Test with both models loaded, one model loaded, no models loaded scenarios.</idea>
+    </ideas>
+  </tests>
+</story-context>
+

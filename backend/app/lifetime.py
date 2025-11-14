@@ -78,76 +78,188 @@ async def startup() -> None:
     # Run in executor since initialize_models() is a blocking sync function
     import asyncio
     import os
+    import time
     from concurrent.futures import ThreadPoolExecutor
+    from pathlib import Path
     
-    # Diagnostic logging: Check working directory and ml-models folder
+    # Enhanced diagnostic logging: Check working directory and ml-models folder
     logger.info("=== ML Model Initialization Diagnostics ===")
     logger.info("Working directory: %s", os.getcwd())
     
-    # Check for ml-models folder from current working directory
-    if os.path.exists("ml-models"):
-        logger.info("ml-models folder found from current path, contents: %s", os.listdir("ml-models"))
-    else:
-        logger.warning("ml-models folder NOT found from current path!")
-    
-    # Also check relative to backend directory (common when running from backend/)
-    backend_ml_models = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ml-models")
-    if os.path.exists(backend_ml_models):
-        logger.info("ml-models folder found relative to backend: %s", backend_ml_models)
-        logger.info("Contents: %s", os.listdir(backend_ml_models))
-    else:
-        logger.warning("ml-models folder NOT found relative to backend: %s", backend_ml_models)
-    
-    # Check backend root (1 level up from app/lifetime.py, which is where models actually are)
-    # lifetime.py is at backend/app/lifetime.py, so going up 1 level gives backend/
-    backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    backend_ml_models = os.path.join(backend_root, "ml-models")
+    # Determine backend root and ml-models path
+    backend_root = Path(__file__).parent.parent
+    ml_models_path = backend_root / "ml-models"
     logger.info("Backend root (calculated from lifetime.py path): %s", backend_root)
-    if os.path.exists(backend_ml_models):
-        logger.info("ml-models folder found at backend root: %s", backend_ml_models)
-        logger.info("Contents: %s", os.listdir(backend_ml_models))
+    logger.info("ML models path: %s", ml_models_path)
+    logger.info("ML models path exists: %s", ml_models_path.exists())
+    
+    if ml_models_path.exists():
+        model_files = list(ml_models_path.glob("*.pth")) + list(ml_models_path.glob("*.pkl"))
+        metadata_files = list(ml_models_path.glob("*_metadata.json"))
+        logger.info("Found %d model files (.pth/.pkl) and %d metadata files", len(model_files), len(metadata_files))
+        if model_files:
+            logger.info("Model files: %s", [f.name for f in model_files])
+        if metadata_files:
+            logger.info("Metadata files: %s", [f.name for f in metadata_files])
     else:
-        logger.warning("ml-models folder NOT found at backend root: %s", backend_ml_models)
+        logger.warning("ml-models folder NOT found at: %s", ml_models_path)
+    
+    # Check configurable startup behavior (default: graceful degradation)
+    require_models = os.getenv("REQUIRE_ML_MODELS", "false").lower() == "true"
+    logger.info("Model requirement mode: %s (set REQUIRE_ML_MODELS=true to fail startup if models missing)", 
+                "strict" if require_models else "graceful")
     
     logger.info("Initializing ML models for inference...")
+    load_start_time = time.time()
     try:
         # Run blocking model loading in thread pool to avoid blocking event loop
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor() as executor:
             model_init_results = await loop.run_in_executor(executor, initialize_models)
         
-        # Log the exact return structure from initialize_models()
-        logger.info("=== initialize_models() return structure ===")
-        logger.info("Full results dict: %s", model_init_results)
+        load_duration = time.time() - load_start_time
+        logger.info("Model loading completed in %.2f seconds", load_duration)
         
+        # Enhanced logging: Log file paths, versions, and metadata
+        logger.info("=== Model Loading Results ===")
         nn_status = model_init_results["neural_network"]
         rf_status = model_init_results["random_forest"]
         
-        logger.info("Neural network status: loaded=%s, version=%s, error=%s", 
-                   nn_status["loaded"], nn_status["version"], nn_status.get("error"))
-        logger.info("Random Forest status: loaded=%s, version=%s, error=%s", 
-                   rf_status["loaded"], rf_status["version"], rf_status.get("error"))
-        
+        # Neural Network diagnostics
         if nn_status["loaded"]:
-            logger.info("✓ Neural network model loaded: version %s", nn_status["version"])
+            logger.info("✓ Neural Network Model:")
+            logger.info("  - Version: %s", nn_status["version"])
+            logger.info("  - Status: Loaded successfully")
+            if nn_status.get("file_path"):
+                logger.info("  - File path: %s", nn_status["file_path"])
+            if nn_status.get("metadata"):
+                logger.info("  - Metadata: %s", nn_status.get("metadata"))
         else:
-            logger.warning("✗ Neural network model not loaded: %s", nn_status.get("error", "Unknown error"))
+            error_msg = nn_status.get("error", "Unknown error")
+            logger.warning("✗ Neural Network Model: NOT LOADED")
+            logger.warning("  - Error: %s", error_msg)
+            if nn_status.get("file_path"):
+                logger.warning("  - Attempted file path: %s", nn_status["file_path"])
         
+        # Random Forest diagnostics
         if rf_status["loaded"]:
-            logger.info("✓ Random Forest model loaded: version %s", rf_status["version"])
+            logger.info("✓ Random Forest Model:")
+            logger.info("  - Version: %s", rf_status["version"])
+            logger.info("  - Status: Loaded successfully")
+            if rf_status.get("file_path"):
+                logger.info("  - File path: %s", rf_status["file_path"])
+            if rf_status.get("metadata"):
+                logger.info("  - Metadata: %s", rf_status.get("metadata"))
         else:
-            logger.warning("✗ Random Forest model not loaded: %s", rf_status.get("error", "Unknown error"))
+            error_msg = rf_status.get("error", "Unknown error")
+            logger.warning("✗ Random Forest Model: NOT LOADED")
+            logger.warning("  - Error: %s", error_msg)
+            if rf_status.get("file_path"):
+                logger.warning("  - Attempted file path: %s", rf_status["file_path"])
         
+        # Verify models are accessible from module globals and app.state
         if nn_status["loaded"] or rf_status["loaded"]:
-            logger.info("✓ ML inference service ready (at least one model loaded)")
+            from app.services.ml_service import are_models_loaded, _get_neural_network_model, _get_random_forest_model
+            from app.services.ml_service import _get_neural_network_metadata, _get_random_forest_metadata
+            
+            # Check module globals accessibility
+            nn_model_global = _get_neural_network_model()
+            rf_model_global = _get_random_forest_model()
+            nn_metadata_global = _get_neural_network_metadata()
+            rf_metadata_global = _get_random_forest_metadata()
+            
+            logger.info("=== Model Accessibility Verification ===")
+            logger.info("Module globals - Neural Network: %s", "accessible" if nn_model_global is not None else "NOT accessible")
+            logger.info("Module globals - Random Forest: %s", "accessible" if rf_model_global is not None else "NOT accessible")
+            
+            models_accessible = are_models_loaded()
+            if models_accessible:
+                logger.info("✓ ML inference service ready (at least one model loaded AND accessible)")
+            else:
+                logger.error(
+                    "⚠️  WARNING: Models reported as loaded but NOT accessible from main thread! "
+                    "This indicates a module isolation issue. Models may not work in scheduled jobs."
+                )
+            
+            # Store models in app.state as backup storage mechanism
+            try:
+                from app.main import app
+                import app.services.ml_service as ml_service
+                
+                # Access models via module attribute (safer than direct import of private vars)
+                nn_model = getattr(ml_service, '_neural_network_model', None)
+                nn_metadata = getattr(ml_service, '_neural_network_metadata', None)
+                rf_model = getattr(ml_service, '_random_forest_model', None)
+                rf_metadata = getattr(ml_service, '_random_forest_metadata', None)
+                
+                # Store models in app.state
+                app.state.models = {
+                    "neural_network": nn_model,
+                    "neural_network_metadata": nn_metadata,
+                    "random_forest": rf_model,
+                    "random_forest_metadata": rf_metadata,
+                }
+                logger.info("✓ Models stored in app.state as backup storage")
+                logger.info("app.state.models keys: %s", list(app.state.models.keys()))
+                
+                # Verify app.state accessibility
+                logger.info("app.state - Neural Network: %s", "accessible" if nn_model is not None else "NOT accessible")
+                logger.info("app.state - Random Forest: %s", "accessible" if rf_model is not None else "NOT accessible")
+                
+                # Model accessibility test: perform test prediction call
+                logger.info("=== Model Accessibility Test (Test Prediction) ===")
+                try:
+                    import numpy as np
+                    # Create a dummy feature vector for testing (9 features as expected)
+                    test_feature_vector = np.array([0.0] * 9)
+                    
+                    # Test neural network if available
+                    if nn_model is not None:
+                        try:
+                            nn_model.eval()
+                            import torch
+                            with torch.no_grad():
+                                test_tensor = torch.FloatTensor(test_feature_vector).unsqueeze(0)
+                                test_output = nn_model(test_tensor)
+                            logger.info("✓ Neural Network: Test prediction successful (output shape: %s)", test_output.shape)
+                        except Exception as test_error:
+                            logger.error("✗ Neural Network: Test prediction failed: %s", test_error)
+                    
+                    # Test random forest if available
+                    if rf_model is not None:
+                        try:
+                            test_prediction = rf_model.predict([test_feature_vector])
+                            logger.info("✓ Random Forest: Test prediction successful (prediction: %s)", test_prediction)
+                        except Exception as test_error:
+                            logger.error("✗ Random Forest: Test prediction failed: %s", test_error)
+                except Exception as test_error:
+                    logger.warning("Model accessibility test failed: %s", test_error, exc_info=True)
+                
+            except Exception as store_error:
+                logger.warning("Failed to store models in app.state: %s", store_error, exc_info=True)
         else:
-            logger.error("✗ ML inference service unavailable: No models loaded")
+            # No models loaded - handle gracefully or fail based on config
+            error_msg = "ML inference service unavailable: No models loaded"
+            logger.error("✗ %s", error_msg)
             logger.error("   Please check that model files exist in ml-models/ directory")
             logger.error("   Run: python scripts/train_models.py to train models if needed")
+            
+            if require_models:
+                logger.error("REQUIRE_ML_MODELS=true set - startup will fail due to missing models")
+                raise RuntimeError(error_msg)
+            else:
+                logger.warning("Continuing startup with graceful degradation (models not required)")
     except Exception as e:
-        logger.error("Failed to initialize ML models: %s", e, exc_info=True)
+        error_msg = f"Failed to initialize ML models: {e}"
+        logger.error(error_msg, exc_info=True)
         import traceback
         logger.error("Traceback: %s", traceback.format_exc())
+        
+        if require_models:
+            logger.error("REQUIRE_ML_MODELS=true set - startup will fail due to model initialization error")
+            raise RuntimeError(error_msg) from e
+        else:
+            logger.warning("Continuing startup with graceful degradation (model initialization error)")
 
 
 async def shutdown() -> None:

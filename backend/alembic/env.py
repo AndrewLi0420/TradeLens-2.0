@@ -10,9 +10,15 @@ from alembic import context
 # Import app modules for metadata
 from app.db.config import Base
 
-# Get database URL - try settings first, fall back to environment
-import os
-database_url = os.getenv("DATABASE_URI", "postgresql://user:pass@localhost/dbname")
+# Get database URL from settings (which loads .env file)
+try:
+    from app.core.config import settings
+    database_url = str(settings.DATABASE_URI)
+except Exception:
+    # Fallback to environment variable if settings can't be loaded
+    import os
+    database_url = os.getenv("DATABASE_URI", "postgresql://user:pass@localhost/dbname")
+
 if not database_url.startswith("postgresql+asyncpg://"):
     database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
 

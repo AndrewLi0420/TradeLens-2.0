@@ -361,6 +361,9 @@ async def synthesize_explanation(
         if timestamp is None:
             return "unknown"
         now = datetime.now(timezone.utc)
+        # Normalize timestamp to timezone-aware if it's naive (database stores naive UTC)
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
         diff = now - timestamp
         minutes = int(diff.total_seconds() / 60)
         hours = int(diff.total_seconds() / 3600)
@@ -688,7 +691,8 @@ async def generate_recommendations(
 
     # Persist
     persisted: list[Recommendation] = []
-    now = datetime.now(timezone.utc)
+    # Convert to timezone-naive UTC for database storage (matches model default behavior)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     for item in selected:
         signal_enum = SignalEnum(item["signal"].lower()) if isinstance(item["signal"], str) else item["signal"]
         from uuid import uuid4

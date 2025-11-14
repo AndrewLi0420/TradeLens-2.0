@@ -529,144 +529,153 @@ Create the user-facing recommendation dashboard, search functionality, and educa
 
 ---
 
-## Epic 4: Data Collection & Model Training Infrastructure Improvements
+## Epic 4: Recommendation Generation Reliability & Filtering Fixes
 
 **Expanded Goal:**
-Address critical infrastructure gaps in data collection and model training to ensure reliable, unlimited data access and automated model retraining. This epic resolves API rate limit constraints by integrating yfinance as the primary data source, fixes async execution issues, implements automated model training workflows, and creates a unified data collection service with fallback mechanisms. This epic ensures the platform can scale to handle any number of stocks without API limitations and maintains model accuracy through automated retraining.
+Fix critical issues preventing recommendation generation from working correctly. This epic addresses ML model loading verification, recommendation generation error handling, filtering logic fixes, sentiment data verification, and end-to-end testing to ensure recommendations are generated successfully and filters work as expected. This epic ensures the core recommendation functionality is reliable and production-ready.
 
 **Value Delivery:**
-- Unlimited data collection without API rate limits enables scaling to full Fortune 500
-- Automated model training ensures models stay current with latest data
-- Unified data source strategy provides reliability and fallback options
-- Consistent data collection pipeline reduces errors and improves data quality
+- Recommendation generation works reliably with proper error handling
+- ML models load correctly and are accessible during generation
+- Filtering logic works correctly for all filter combinations
+- Sentiment data is properly gathered and used in recommendations
+- Comprehensive diagnostics help identify and fix issues quickly
+- End-to-end testing validates the complete recommendation pipeline
 
 ---
 
-### Story 4.1: Unified Data Collection Service with yfinance Integration
-
-**As a** system,
-**I want** a unified data collection service that uses yfinance as the primary source with Alpha Vantage as fallback,
-**So that** I can collect unlimited market data without API rate limits.
-
-**Acceptance Criteria:**
-1. yfinance added to requirements.txt and properly installed
-2. New unified `collect_market_data()` function supports both yfinance and Alpha Vantage
-3. yfinance used as primary data source (no API key required, unlimited calls)
-4. Alpha Vantage used as fallback when yfinance fails
-5. Proper async execution: yfinance blocking calls run in executor/thread pool
-6. Symbol normalization handled (e.g., BRK.B → BRK-B for Yahoo Finance)
-7. Error handling for invalid symbols, missing data, network failures
-8. Data format consistency: both sources return same structure (price, volume, timestamp)
-9. Logging indicates which data source was used for each stock
-10. Configuration option to prefer Alpha Vantage or yfinance
-
-**Prerequisites:** Story 2.2 (market data collection pipeline)
-
----
-
-### Story 4.2: Fix yfinance Async Execution Issues
+### Story 4.1: ML Model Loading Verification & Diagnostics
 
 **As a** developer,
-**I want** yfinance calls to execute properly in async context without blocking the event loop,
-**So that** data collection can run efficiently in scheduled jobs.
+**I want** comprehensive diagnostics and verification for ML model loading at startup,
+**So that** I can identify and fix model loading issues before recommendation generation fails.
 
 **Acceptance Criteria:**
-1. yfinance blocking calls wrapped in `asyncio.to_thread()` or executor
-2. No event loop blocking during data collection
-3. Concurrent data collection works correctly (multiple stocks processed in parallel)
-4. Error handling for thread pool exhaustion
-5. Timeout handling for long-running yfinance calls
-6. Performance testing: verify async execution doesn't degrade performance
-7. Memory usage remains reasonable during concurrent collection
+1. Enhanced model loading diagnostics in `lifetime.py` startup
+2. Verify models are accessible from both module globals and app.state
+3. Log model file paths, versions, and metadata during loading
+4. Health check endpoint: `GET /api/v1/health/ml-models` returns model status
+5. Model accessibility test: verify models can be used for inference after loading
+6. Clear error messages when models fail to load (file not found, version mismatch, etc.)
+7. Fallback mechanism: if models fail to load, log detailed error and prevent generation
+8. Model loading status persisted and queryable (for debugging)
+9. Startup fails gracefully if models required but not available (configurable)
 
-**Prerequisites:** Story 4.1 (yfinance integration)
+**Prerequisites:** Story 2.6 (ML model inference service)
 
 ---
 
-### Story 4.3: Automated Model Training Pipeline
+### Story 4.2: Recommendation Generation Error Handling & Diagnostics
+
+**As a** developer,
+**I want** comprehensive error handling and diagnostics in recommendation generation,
+**So that** I can identify why recommendations are failing and fix issues quickly.
+
+**Acceptance Criteria:**
+1. Enhanced error logging in `generate_recommendations()` with stock-level details
+2. Track failure reasons: model errors, data missing, prediction failures, etc.
+3. Diagnostic endpoint: `GET /api/v1/admin/recommendations/diagnostics` shows generation health
+4. Error categorization: model errors, data errors, filtering errors, persistence errors
+5. Partial success handling: generate recommendations for stocks that succeed even if others fail
+6. Failure summary returned in generation response (counts by error type)
+7. Detailed error logs include: stock_id, symbol, error type, error message, stack trace
+8. Graceful degradation: if ensemble fails, try individual models
+9. Timeout handling for long-running predictions
+10. Retry logic for transient failures (with exponential backoff)
+
+**Prerequisites:** Story 2.8 (recommendation generation logic)
+
+---
+
+### Story 4.3: Fix Recommendation Filtering Logic
+
+**As a** user,
+**I want** recommendation filters to work correctly for all filter combinations,
+**So that** I can find recommendations matching my criteria.
+
+**Acceptance Criteria:**
+1. Fix holding_period filter: correctly maps to risk levels (daily→high, weekly→medium, monthly→low)
+2. Fix risk_level filter: correctly filters by RiskLevelEnum values
+3. Fix confidence_min filter: correctly filters by confidence_score threshold
+4. Fix sort_by filters: date, confidence, risk, sentiment all work correctly
+5. Fix sort_direction: asc/desc works for all sort fields
+6. Combined filters work together (holding_period + risk_level + confidence_min)
+7. User preferences correctly applied as default filters when query params not provided
+8. Tier-aware filtering works correctly (free tier sees only tracked stocks)
+9. Filter edge cases handled: null values, empty results, invalid inputs
+10. Unit tests for all filter combinations
+
+**Prerequisites:** Story 3.6 (recommendation filtering & sorting), Story 2.8 (recommendation generation)
+
+---
+
+### Story 4.4: Sentiment Data Verification & Collection Fixes
 
 **As a** system,
-**I want** automated model training scheduled to run periodically (daily/weekly),
-**So that** ML models stay current with latest market data and maintain accuracy.
+**I want** sentiment data to be properly collected and verified before recommendation generation,
+**So that** recommendations include accurate sentiment scores.
 
 **Acceptance Criteria:**
-1. Scheduled training job added to APScheduler in `lifetime.py`
-2. Training runs daily at configurable time (e.g., 2 AM UTC after data collection)
-3. Training uses all available historical data from database
-4. Models automatically reloaded after successful training
-5. Training job logs progress and results
-6. Error handling: training failures don't crash scheduler
-7. Training skipped if insufficient data available (with logging)
-8. Model versioning: new models saved with timestamp version
-9. Old models retained for rollback capability
-10. Training metrics logged (accuracy, R², dataset size)
+1. Verify sentiment collection job runs successfully and collects data
+2. Check sentiment data availability before generating recommendations
+3. Log sentiment data coverage: which stocks have sentiment, which don't
+4. Handle missing sentiment gracefully: use neutral (0.0) if no sentiment available
+5. Verify aggregated sentiment calculation works correctly
+6. Sentiment data freshness check: warn if sentiment data is stale (>24 hours)
+7. Diagnostic endpoint shows sentiment data status per stock
+8. Sentiment collection error handling: retry failed collections, log errors
+9. Sentiment data validation: ensure scores are in [-1, 1] range
+10. Integration test: verify sentiment is included in generated recommendations
 
-**Prerequisites:** Story 2.5 (ML model training infrastructure), Story 2.2 (market data collection)
+**Prerequisites:** Story 2.4 (sentiment collection), Story 2.8 (recommendation generation)
 
 ---
 
-### Story 4.4: Model Training API Endpoint
+### Story 4.5: End-to-End Recommendation Generation Testing
 
-**As an** administrator,
-**I want** an API endpoint to manually trigger model training,
-**So that** I can retrain models on-demand for testing or after data issues.
+**As a** developer,
+**I want** comprehensive end-to-end tests for recommendation generation,
+**So that** I can verify the complete pipeline works correctly.
 
 **Acceptance Criteria:**
-1. Admin endpoint: `POST /api/v1/admin/ml/train`
-2. Endpoint requires admin authentication/authorization
-3. Request accepts optional parameters: date range, model types (NN, RF, both)
-4. Response includes: training status, model paths, metrics
-5. Endpoint returns immediately (training runs asynchronously)
-6. Training status can be checked via separate status endpoint
-7. Error handling: returns appropriate HTTP status codes
-8. Rate limiting: prevents excessive manual training triggers
+1. E2E test: generate recommendations with all components (models, data, sentiment)
+2. Test model loading: verify models accessible during generation
+3. Test prediction pipeline: verify predictions succeed for test stocks
+4. Test filtering: verify all filter combinations work correctly
+5. Test error handling: verify graceful failures when components unavailable
+6. Test sentiment integration: verify sentiment scores included in recommendations
+7. Test persistence: verify recommendations saved to database correctly
+8. Test tier filtering: verify free tier users see only tracked stocks
+9. Performance test: verify generation completes within latency targets
+10. Integration test script: run full pipeline and validate results
 
-**Prerequisites:** Story 4.3 (automated training pipeline)
+**Prerequisites:** Story 4.1 (model loading), Story 4.2 (error handling), Story 4.3 (filtering), Story 4.4 (sentiment)
 
 ---
 
-### Story 4.5: Data Collection Error Handling & Retry Logic
+### Story 4.6: Recommendation Generation Performance & Reliability
 
 **As a** system,
-**I want** robust error handling and retry logic for data collection failures,
-**So that** temporary network issues or API problems don't cause data gaps.
+**I want** recommendation generation to be performant and reliable,
+**So that** recommendations are generated successfully within latency targets.
 
 **Acceptance Criteria:**
-1. Retry logic for transient failures (network timeouts, 5xx errors)
-2. Exponential backoff between retries
-3. Maximum retry attempts configured (e.g., 3 attempts)
-4. Different retry strategies for yfinance vs Alpha Vantage
-5. Failed stocks logged with error details
-6. Failed stocks automatically retried on next collection cycle
-7. Circuit breaker pattern: stop retrying if source consistently fails
-8. Fallback to secondary source when primary fails after retries
-9. Error metrics tracked (failure rate, retry success rate)
+1. Optimize prediction calls: batch where possible, parallelize where safe
+2. Database query optimization: reduce N+1 queries in generation loop
+3. Caching: cache user preferences, stock metadata to reduce DB calls
+4. Timeout configuration: set reasonable timeouts for predictions and DB queries
+5. Resource limits: prevent memory exhaustion during large batch generation
+6. Progress tracking: log progress for long-running generations
+7. Rate limiting: prevent excessive concurrent generations
+8. Monitoring: track generation success rate, latency, error rates
+9. Alerting: alert on high failure rates or performance degradation
+10. Performance targets: generate 10 recommendations in <60 seconds
 
-**Prerequisites:** Story 4.1 (unified data collection), Story 4.2 (async execution)
+**Prerequisites:** Story 4.2 (error handling), Story 4.5 (E2E testing)
 
 ---
 
-### Story 4.6: Data Collection Performance Optimization
-
-**As a** system,
-**I want** optimized data collection performance for large stock universes,
-**So that** collection completes efficiently even for 500+ stocks.
-
-**Acceptance Criteria:**
-1. Batch processing optimized for yfinance (larger batches possible)
-2. Concurrent collection tuned for optimal throughput
-3. Rate limiting removed or adjusted for yfinance (unlimited source)
-4. Collection time measured and logged
-5. Performance targets: 30 stocks in <30 seconds, 500 stocks in <10 minutes
-6. Memory usage optimized (streaming/batching to avoid loading all data)
-7. Database writes batched for efficiency
-8. Progress reporting for long-running collections
-
-**Prerequisites:** Story 4.1 (unified service), Story 4.2 (async execution), Story 4.5 (error handling)
-
----
-
-**Epic 4 Summary:** 6 stories addressing critical infrastructure improvements: unified data collection with yfinance, async execution fixes, automated model training, admin API, error handling, and performance optimization. This epic ensures scalability and reliability of the data pipeline.
+**Epic 4 Summary:** 6 stories fixing critical recommendation generation issues: model loading verification, error handling, filtering fixes, sentiment verification, E2E testing, and performance optimization. This epic ensures recommendation generation is reliable and production-ready.
 
 ---
 

@@ -34,9 +34,10 @@ class StockRead(StockBase):
 
 
 class StockSearch(StockBase):
-    """Schema for stock search results with recommendation status"""
+    """Schema for stock search results with recommendation status and tracking status"""
     id: UUID
     has_recommendation: bool = False
+    is_tracked: bool = False
 
     class Config:
         from_attributes = True

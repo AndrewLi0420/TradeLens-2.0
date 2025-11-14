@@ -25,10 +25,9 @@ async def get_recommendations(
     sort_direction: Literal["asc", "desc"] = "desc",
 ) -> list[Recommendation]:
     """
-    Get recommendations for a user with tier-aware filtering and query params.
+    Get recommendations for a user with query params.
     
-    For free tier users: Only returns recommendations for tracked stocks (max 5).
-    For premium tier users: Returns all recommendations.
+    NOTE: Tier filtering is currently bypassed - all recommendations are shown.
     
     Applies user preferences as defaults if query params not provided.
     """
@@ -37,22 +36,23 @@ async def get_recommendations(
         selectinload(Recommendation.stock)
     ).where(Recommendation.user_id == user_id)
     
+    # TIER FILTERING BYPASSED: Show all recommendations regardless of tier
     # Tier-aware filtering: Free tier users only see tracked stocks
-    user_tier = await get_user_tier(session, user_id)
-    if user_tier == TierEnum.FREE:
-        # Get tracked stock IDs for free tier user
-        tracked_stocks_query = select(UserStockTracking.stock_id).where(
-            UserStockTracking.user_id == user_id
-        )
-        tracked_stocks_result = await session.execute(tracked_stocks_query)
-        tracked_stock_ids = [row[0] for row in tracked_stocks_result.all()]
-        
-        if not tracked_stock_ids:
-            # User has no tracked stocks, return empty list
-            return []
-        
-        # Filter recommendations to only tracked stocks
-        query = query.where(Recommendation.stock_id.in_(tracked_stock_ids))
+    # user_tier = await get_user_tier(session, user_id)
+    # if user_tier == TierEnum.FREE:
+    #     # Get tracked stock IDs for free tier user
+    #     tracked_stocks_query = select(UserStockTracking.stock_id).where(
+    #         UserStockTracking.user_id == user_id
+    #     )
+    #     tracked_stocks_result = await session.execute(tracked_stocks_query)
+    #     tracked_stock_ids = [row[0] for row in tracked_stocks_result.all()]
+    #     
+    #     if not tracked_stock_ids:
+    #         # User has no tracked stocks, return empty list
+    #         return []
+    #     
+    #     # Filter recommendations to only tracked stocks
+    #     query = query.where(Recommendation.stock_id.in_(tracked_stock_ids))
     
     # Apply user preferences as defaults if query params not provided
     if holding_period is None or risk_level is None:
@@ -131,13 +131,12 @@ async def get_recommendation_by_id(
     recommendation_id: UUID,
 ) -> Recommendation | None:
     """
-    Get a single recommendation by ID with tier-aware access control.
+    Get a single recommendation by ID.
     
-    For free tier users: Only returns recommendation if it's for a tracked stock.
-    For premium tier users: Returns recommendation if it exists and belongs to user.
+    NOTE: Tier filtering is currently bypassed - all recommendations are accessible.
     
     Returns:
-        Recommendation object if found and accessible, None otherwise
+        Recommendation object if found and belongs to user, None otherwise
     """
     # Start with base query, eager load stock relationship
     query = select(Recommendation).options(
@@ -157,23 +156,24 @@ async def get_recommendation_by_id(
         # Recommendation not found or doesn't belong to user
         return None
     
+    # TIER FILTERING BYPASSED: Show all recommendations regardless of tier
     # Tier-aware access control: Free tier users only see tracked stocks
-    user_tier = await get_user_tier(session, user_id)
-    if user_tier == TierEnum.FREE:
-        # Check if the recommendation's stock is tracked by the user
-        tracked_stock_query = select(UserStockTracking.stock_id).where(
-            and_(
-                UserStockTracking.user_id == user_id,
-                UserStockTracking.stock_id == recommendation.stock_id
-            )
-        )
-        tracked_stock_result = await session.execute(tracked_stock_query)
-        is_tracked = tracked_stock_result.scalar_one_or_none() is not None
-        
-        if not is_tracked:
-            # Free tier user trying to access untracked stock recommendation
-            return None
+    # user_tier = await get_user_tier(session, user_id)
+    # if user_tier == TierEnum.FREE:
+    #     # Check if the recommendation's stock is tracked by the user
+    #     tracked_stock_query = select(UserStockTracking.stock_id).where(
+    #         and_(
+    #             UserStockTracking.user_id == user_id,
+    #             UserStockTracking.stock_id == recommendation.stock_id
+    #         )
+    #     )
+    #     tracked_stock_result = await session.execute(tracked_stock_query)
+    #     is_tracked = tracked_stock_result.scalar_one_or_none() is not None
+    #     
+    #     if not is_tracked:
+    #         # Free tier user trying to access untracked stock recommendation
+    #         return None
     
-    # Premium tier or free tier with tracked stock: return recommendation
+    # Return recommendation (tier filtering bypassed)
     return recommendation
 

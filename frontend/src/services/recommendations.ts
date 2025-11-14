@@ -10,6 +10,7 @@ export interface Stock {
 
 export interface StockSearch extends Stock {
   has_recommendation: boolean;
+  is_tracked: boolean;
 }
 
 export interface Recommendation {
@@ -67,8 +68,29 @@ export async function getRecommendations(
   const queryString = queryParams.toString();
   const url = `/api/v1/recommendations${queryString ? `?${queryString}` : ''}`;
   
-  const response = await apiClient.get<Recommendation[]>(url);
-  return response.data;
+  try {
+    const response = await apiClient.get<Recommendation[]>(url);
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[getRecommendations] API Response:', {
+        url,
+        status: response.status,
+        count: response.data.length,
+        data: response.data,
+      });
+    }
+    return response.data;
+  } catch (error) {
+    // Enhanced error logging
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[getRecommendations] API Error:', {
+        url,
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+    throw error;
+  }
 }
 
 /**
@@ -116,6 +138,30 @@ export async function generateRecommendations(
 ): Promise<{ created: number; message?: string }> {
   const response = await apiClient.post<{ created: number; message?: string }>(
     `/api/v1/recommendations/generate?user_id=${userId}&count=${count}`
+  );
+  return response.data;
+}
+
+/**
+ * Track a stock for the current user
+ * @param stockId - Stock UUID
+ * @returns Success message
+ */
+export async function trackStock(stockId: string): Promise<{ message: string; tracked: boolean }> {
+  const response = await apiClient.post<{ message: string; tracked: boolean }>(
+    `/api/v1/stocks/${stockId}/track`
+  );
+  return response.data;
+}
+
+/**
+ * Untrack a stock for the current user
+ * @param stockId - Stock UUID
+ * @returns Success message
+ */
+export async function untrackStock(stockId: string): Promise<{ message: string; tracked: boolean }> {
+  const response = await apiClient.delete<{ message: string; tracked: boolean }>(
+    `/api/v1/stocks/${stockId}/track`
   );
   return response.data;
 }

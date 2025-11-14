@@ -20,7 +20,7 @@ const PREFERENCES_QUERY_KEY = ['preferences', 'current-user'];
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { isLimitReached, stockLimit } = useTier();
+  const { isLimitReached, stockLimit, tier } = useTier();
   const [filters, setFilters] = useState<GetRecommendationsParams>({
     sort_by: 'date',
     sort_direction: 'desc',
@@ -60,15 +60,17 @@ export default function Dashboard() {
     },
     onSuccess: (data) => {
       if (data.created > 0) {
-        setGenerateMessage(`Successfully generated ${data.created} recommendations!`);
-        // Refetch recommendations after generation
-        refetch();
+        setGenerateMessage(`✅ Successfully generated ${data.created} recommendation${data.created !== 1 ? 's' : ''}! Refreshing list...`);
+        // Refetch recommendations after a short delay to allow backend to persist
+        setTimeout(() => {
+          refetch();
+        }, 1000);
         // Clear message after 5 seconds
         setTimeout(() => setGenerateMessage(null), 5000);
       } else {
         // Show diagnostic message if provided, otherwise generic message
         const message = data.message || 'Generated 0 recommendations. Check backend logs for details.';
-        setGenerateMessage(message);
+        setGenerateMessage(`⚠️ ${message}`);
         // Clear message after 10 seconds (longer for diagnostic info)
         setTimeout(() => setGenerateMessage(null), 10000);
       }
@@ -181,17 +183,48 @@ export default function Dashboard() {
 
       {isError && (
         <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 mb-6">
-          <p className="text-red-400">
+          <p className="text-red-400 font-semibold mb-2">Error loading recommendations</p>
+          <p className="text-red-300 text-sm">
             {error instanceof Error ? error.message : 'Failed to load recommendations'}
           </p>
+          <Button
+            onClick={() => refetch()}
+            className="mt-4 bg-financial-blue hover:bg-financial-blue/80 text-white"
+          >
+            Retry
+          </Button>
         </div>
       )}
 
       {!isLoading && !isError && (
-        <RecommendationList
-          recommendations={recommendations ?? []}
-          onRecommendationClick={handleRecommendationClick}
-        />
+        <>
+          {/* Debug info - remove in production */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-4 p-2 bg-gray-800 rounded text-xs text-gray-400">
+              Debug: {recommendations?.length ?? 0} recommendations loaded | Tier: {tier} | User ID: {user?.id}
+            </div>
+          )}
+          {/* Free tier notice */}
+          {tier === 'free' && (!recommendations || recommendations.length === 0) && (
+            <div className="mb-4 p-4 bg-yellow-900/20 border border-yellow-800 rounded-lg">
+              <p className="text-yellow-400 text-sm mb-2">
+                <strong>Free Tier Notice:</strong> You'll only see recommendations for stocks you're tracking.
+              </p>
+              <p className="text-yellow-300 text-xs">
+                Go to the <a href="/search" className="underline">Search</a> page to find and track stocks (up to 5), then generate recommendations again.
+              </p>
+            </div>
+          )}
+          {recommendations && recommendations.length > 0 && (
+            <div className="mb-4 text-sm text-gray-400">
+              Showing {recommendations.length} recommendation{recommendations.length !== 1 ? 's' : ''}
+            </div>
+          )}
+          <RecommendationList
+            recommendations={recommendations ?? []}
+            onRecommendationClick={handleRecommendationClick}
+          />
+        </>
       )}
     </div>
   );

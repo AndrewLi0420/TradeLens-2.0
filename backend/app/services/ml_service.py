@@ -515,6 +515,11 @@ def load_model(
     
     Returns:
         Tuple of (loaded_model, metadata_dict)
+    
+    Raises:
+        FileNotFoundError: If model file or metadata file not found (with detailed path)
+        ValueError: If no model versions found or version mismatch
+        RuntimeError: If model loading fails (corrupted file, version mismatch, etc.)
     """
     if base_path is None:
         # Go up 3 levels from backend/app/services/ml_service.py to backend/
@@ -523,42 +528,139 @@ def load_model(
     else:
         base_path = Path(base_path)
     
+    # Enhanced error handling: Check if base_path exists
+    if not base_path.exists():
+        error_msg = (
+            f"Model directory not found: {base_path}. "
+            f"Please ensure ml-models directory exists in backend root. "
+            f"Current working directory: {Path.cwd()}"
+        )
+        logger.error(error_msg)
+        raise FileNotFoundError(error_msg)
+    
     if version is None:
         version = get_latest_model_version(model_type, base_path)
         if version is None:
-            raise ValueError(f"No model versions found for {model_type}")
+            error_msg = (
+                f"No model versions found for {model_type} in {base_path}. "
+                f"Available files: {list(base_path.glob('*')) if base_path.exists() else 'N/A'}. "
+                f"Run training script to generate models."
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
     
     if model_type == "neural_network":
         model_path = base_path / f"neural_network_{version}.pth"
         metadata_path = base_path / f"neural_network_{version}_metadata.json"
+        
+        # Enhanced error messages with file paths
         if not model_path.exists():
-            raise FileNotFoundError(f"Model file not found: {model_path}")
+            error_msg = (
+                f"Neural network model file not found: {model_path}. "
+                f"Expected file: {model_path.absolute()}. "
+                f"Available neural network files: {list(base_path.glob('neural_network_*.pth'))}"
+            )
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
         
-        import json
-        with open(metadata_path, "r") as f:
-            metadata = json.load(f)
+        if not metadata_path.exists():
+            error_msg = (
+                f"Neural network metadata file not found: {metadata_path}. "
+                f"Expected file: {metadata_path.absolute()}. "
+                f"Model file exists but metadata is missing."
+            )
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
         
-        model = NeuralNetworkModel(
-            input_size=metadata["input_size"],
-            hidden_size1=metadata["hidden_size1"],
-            hidden_size2=metadata["hidden_size2"],
-            num_classes=metadata["num_classes"],
-        )
-        model.load_state_dict(torch.load(model_path))
-        model.eval()
+        try:
+            import json
+            with open(metadata_path, "r") as f:
+                metadata = json.load(f)
+            
+            # Validate metadata structure
+            required_fields = ["input_size", "hidden_size1", "hidden_size2", "num_classes"]
+            missing_fields = [f for f in required_fields if f not in metadata]
+            if missing_fields:
+                error_msg = (
+                    f"Neural network metadata incomplete: missing fields {missing_fields}. "
+                    f"Metadata file: {metadata_path}. "
+                    f"Metadata contents: {metadata}"
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            model = NeuralNetworkModel(
+                input_size=metadata["input_size"],
+                hidden_size1=metadata["hidden_size1"],
+                hidden_size2=metadata["hidden_size2"],
+                num_classes=metadata["num_classes"],
+            )
+            
+            try:
+                model.load_state_dict(torch.load(model_path))
+            except Exception as load_error:
+                error_msg = (
+                    f"Failed to load neural network state dict from {model_path}: {load_error}. "
+                    f"This may indicate a corrupted model file or version mismatch."
+                )
+                logger.error(error_msg)
+                raise RuntimeError(error_msg) from load_error
+            
+            model.eval()
+        except json.JSONDecodeError as json_error:
+            error_msg = (
+                f"Failed to parse neural network metadata JSON from {metadata_path}: {json_error}. "
+                f"Metadata file may be corrupted."
+            )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from json_error
     else:  # random_forest
         import joblib
         model_path = base_path / f"random_forest_{version}.pkl"
         metadata_path = base_path / f"random_forest_{version}_metadata.json"
-        if not model_path.exists():
-            raise FileNotFoundError(f"Model file not found: {model_path}")
         
-        model = joblib.load(model_path)
-        import json
-        with open(metadata_path, "r") as f:
-            metadata = json.load(f)
+        # Enhanced error messages with file paths
+        if not model_path.exists():
+            error_msg = (
+                f"Random Forest model file not found: {model_path}. "
+                f"Expected file: {model_path.absolute()}. "
+                f"Available Random Forest files: {list(base_path.glob('random_forest_*.pkl'))}"
+            )
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
+        
+        if not metadata_path.exists():
+            error_msg = (
+                f"Random Forest metadata file not found: {metadata_path}. "
+                f"Expected file: {metadata_path.absolute()}. "
+                f"Model file exists but metadata is missing."
+            )
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
+        
+        try:
+            model = joblib.load(model_path)
+        except Exception as load_error:
+            error_msg = (
+                f"Failed to load Random Forest model from {model_path}: {load_error}. "
+                f"This may indicate a corrupted model file or version mismatch."
+            )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from load_error
+        
+        try:
+            import json
+            with open(metadata_path, "r") as f:
+                metadata = json.load(f)
+        except json.JSONDecodeError as json_error:
+            error_msg = (
+                f"Failed to parse Random Forest metadata JSON from {metadata_path}: {json_error}. "
+                f"Metadata file may be corrupted."
+            )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from json_error
     
-    logger.info("Loaded model %s version %s", model_type, version)
+    logger.info("Loaded model %s version %s from %s", model_type, version, model_path)
     return model, metadata
 
 
@@ -839,8 +941,8 @@ def initialize_models(base_path: str | Path | None = None) -> dict[str, Any]:
     global _random_forest_model, _random_forest_metadata
     
     results = {
-        "neural_network": {"loaded": False, "version": None, "error": None},
-        "random_forest": {"loaded": False, "version": None, "error": None},
+        "neural_network": {"loaded": False, "version": None, "error": None, "file_path": None, "metadata": None},
+        "random_forest": {"loaded": False, "version": None, "error": None, "file_path": None, "metadata": None},
     }
     
     # Determine the actual base_path that will be used
@@ -882,10 +984,30 @@ def initialize_models(base_path: str | Path | None = None) -> dict[str, Any]:
         )
         results["neural_network"]["loaded"] = True
         results["neural_network"]["version"] = _neural_network_metadata.get("version")
+        # Store file path and metadata in results
+        if latest_version:
+            results["neural_network"]["file_path"] = str(model_path.absolute())
+        results["neural_network"]["metadata"] = _neural_network_metadata
         logger.info("Neural network model loaded and cached for inference")
+        logger.info("  - Version: %s", results["neural_network"]["version"])
+        logger.info("  - File path: %s", results["neural_network"]["file_path"])
+        logger.info("  - Load time: %s", _neural_network_metadata.get("training_date", "N/A"))
     except Exception as e:
         error_msg = str(e)
         results["neural_network"]["error"] = error_msg
+        # Try to include attempted file path in error
+        try:
+            latest_version = get_latest_model_version("neural_network", base_path=base_path)
+            if latest_version:
+                if base_path is None:
+                    backend_root = Path(__file__).parent.parent.parent
+                    model_base = backend_root / "ml-models"
+                else:
+                    model_base = Path(base_path)
+                attempted_path = model_base / f"neural_network_{latest_version}.pth"
+                results["neural_network"]["file_path"] = str(attempted_path.absolute())
+        except Exception:
+            pass  # Ignore errors when trying to get path for error reporting
         logger.warning("Failed to load neural network model: %s", error_msg)
     
     # Load Random Forest model
@@ -912,10 +1034,30 @@ def initialize_models(base_path: str | Path | None = None) -> dict[str, Any]:
         )
         results["random_forest"]["loaded"] = True
         results["random_forest"]["version"] = _random_forest_metadata.get("version")
+        # Store file path and metadata in results
+        if latest_version:
+            results["random_forest"]["file_path"] = str(rf_path.absolute())
+        results["random_forest"]["metadata"] = _random_forest_metadata
         logger.info("Random Forest model loaded and cached for inference")
+        logger.info("  - Version: %s", results["random_forest"]["version"])
+        logger.info("  - File path: %s", results["random_forest"]["file_path"])
+        logger.info("  - Load time: %s", _random_forest_metadata.get("training_date", "N/A"))
     except Exception as e:
         error_msg = str(e)
         results["random_forest"]["error"] = error_msg
+        # Try to include attempted file path in error
+        try:
+            latest_version = get_latest_model_version("random_forest", base_path=base_path)
+            if latest_version:
+                if base_path is None:
+                    backend_root = Path(__file__).parent.parent.parent
+                    model_base = backend_root / "ml-models"
+                else:
+                    model_base = Path(base_path)
+                attempted_path = model_base / f"random_forest_{latest_version}.pkl"
+                results["random_forest"]["file_path"] = str(attempted_path.absolute())
+        except Exception:
+            pass  # Ignore errors when trying to get path for error reporting
         logger.warning("Failed to load Random Forest model: %s", error_msg)
     
     # Log the exact dict that will be returned
@@ -930,18 +1072,126 @@ def initialize_models(base_path: str | Path | None = None) -> dict[str, Any]:
                results["random_forest"]["version"],
                results["random_forest"]["error"])
     
+    # Final diagnostic: Log final state of module globals
+    import sys
+    logger.info("=== Final Model State After initialize_models() ===")
+    logger.info("_neural_network_model is None: %s", _neural_network_model is None)
+    logger.info("_neural_network_model ID: %s", id(_neural_network_model) if _neural_network_model is not None else "None")
+    logger.info("_random_forest_model is None: %s", _random_forest_model is None)
+    logger.info("_random_forest_model ID: %s", id(_random_forest_model) if _random_forest_model is not None else "None")
+    logger.info("Module in sys.modules: %s", 'app.services.ml_service' in sys.modules)
+    if 'app.services.ml_service' in sys.modules:
+        ml_module = sys.modules['app.services.ml_service']
+        logger.info("Module object: %s", ml_module)
+        logger.info("Module __file__: %s", getattr(ml_module, '__file__', 'N/A'))
+    
     return results
+
+
+def _get_neural_network_model() -> Any | None:
+    """
+    Get neural network model from module globals or app.state (fallback).
+    
+    Returns:
+        Neural network model or None if not available
+    """
+    global _neural_network_model
+    
+    # First check module globals
+    if _neural_network_model is not None:
+        return _neural_network_model
+    
+    # Fallback to app.state if available
+    try:
+        from app.main import app
+        if hasattr(app, 'state') and hasattr(app.state, 'models'):
+            models = app.state.models
+            if models and "neural_network" in models and models["neural_network"] is not None:
+                logger.debug("Retrieved neural network model from app.state")
+                return models["neural_network"]
+    except Exception:
+        pass  # app.state not available (e.g., in tests or before startup)
+    
+    return None
+
+
+def _get_random_forest_model() -> Any | None:
+    """
+    Get random forest model from module globals or app.state (fallback).
+    
+    Returns:
+        Random forest model or None if not available
+    """
+    global _random_forest_model
+    
+    # First check module globals
+    if _random_forest_model is not None:
+        return _random_forest_model
+    
+    # Fallback to app.state if available
+    try:
+        from app.main import app
+        if hasattr(app, 'state') and hasattr(app.state, 'models'):
+            models = app.state.models
+            if models and "random_forest" in models and models["random_forest"] is not None:
+                logger.debug("Retrieved random forest model from app.state")
+                return models["random_forest"]
+    except Exception:
+        pass  # app.state not available (e.g., in tests or before startup)
+    
+    return None
+
+
+def _get_neural_network_metadata() -> dict[str, Any] | None:
+    """Get neural network metadata from module globals or app.state (fallback)."""
+    global _neural_network_metadata
+    
+    if _neural_network_metadata is not None:
+        return _neural_network_metadata
+    
+    try:
+        from app.main import app
+        if hasattr(app, 'state') and hasattr(app.state, 'models'):
+            models = app.state.models
+            if models and "neural_network_metadata" in models:
+                return models["neural_network_metadata"]
+    except Exception:
+        pass
+    
+    return None
+
+
+def _get_random_forest_metadata() -> dict[str, Any] | None:
+    """Get random forest metadata from module globals or app.state (fallback)."""
+    global _random_forest_metadata
+    
+    if _random_forest_metadata is not None:
+        return _random_forest_metadata
+    
+    try:
+        from app.main import app
+        if hasattr(app, 'state') and hasattr(app.state, 'models'):
+            models = app.state.models
+            if models and "random_forest_metadata" in models:
+                return models["random_forest_metadata"]
+    except Exception:
+        pass
+    
+    return None
 
 
 def are_models_loaded() -> bool:
     """
     Check if at least one ML model is loaded and available for inference.
     
+    Checks both module globals and app.state (fallback).
+    
     Returns:
         True if at least one model (neural network or random forest) is loaded, False otherwise
     """
-    global _neural_network_model, _random_forest_model
-    return _neural_network_model is not None or _random_forest_model is not None
+    nn_model = _get_neural_network_model()
+    rf_model = _get_random_forest_model()
+    return nn_model is not None or rf_model is not None
 
 
 def _infer_neural_network(feature_vector: np.ndarray) -> tuple[int, np.ndarray]:
@@ -960,21 +1210,21 @@ def _infer_neural_network(feature_vector: np.ndarray) -> tuple[int, np.ndarray]:
         ModelNotLoadedError: If model is not loaded
         InvalidInputError: If feature vector is invalid
     """
-    global _neural_network_model
-    
     # Input validation
     if not isinstance(feature_vector, np.ndarray):
         raise InvalidInputError(f"feature_vector must be numpy array, got {type(feature_vector)}")
     if feature_vector.shape != (9,):
         raise InvalidInputError(f"feature_vector must have shape (9,), got {feature_vector.shape}")
     
-    if _neural_network_model is None:
+    # Get model from module globals or app.state (fallback)
+    neural_network_model = _get_neural_network_model()
+    if neural_network_model is None:
         raise ModelNotLoadedError("Neural network model not loaded. Call initialize_models() at startup.")
     
-    _neural_network_model.eval()
+    neural_network_model.eval()
     with torch.no_grad():
         X_tensor = torch.FloatTensor(feature_vector).unsqueeze(0)  # Add batch dimension
-        probabilities = _neural_network_model(X_tensor)
+        probabilities = neural_network_model(X_tensor)
         predicted_class = torch.argmax(probabilities, dim=1).item()
         probabilities_np = probabilities.squeeze(0).numpy()
     
@@ -997,21 +1247,21 @@ def _infer_random_forest(feature_vector: np.ndarray) -> tuple[int, np.ndarray]:
         ModelNotLoadedError: If model is not loaded
         InvalidInputError: If feature vector is invalid
     """
-    global _random_forest_model
-    
     # Input validation
     if not isinstance(feature_vector, np.ndarray):
         raise InvalidInputError(f"feature_vector must be numpy array, got {type(feature_vector)}")
     if feature_vector.shape != (9,):
         raise InvalidInputError(f"feature_vector must have shape (9,), got {feature_vector.shape}")
     
-    if _random_forest_model is None:
+    # Get model from module globals or app.state (fallback)
+    random_forest_model = _get_random_forest_model()
+    if random_forest_model is None:
         raise ModelNotLoadedError("Random Forest model not loaded. Call initialize_models() at startup.")
     
     # Reshape for scikit-learn (expects 2D array)
     feature_vector_2d = feature_vector.reshape(1, -1)
-    predicted_class = _random_forest_model.predict(feature_vector_2d)[0]
-    probabilities = _random_forest_model.predict_proba(feature_vector_2d)[0]
+    predicted_class = random_forest_model.predict(feature_vector_2d)[0]
+    probabilities = random_forest_model.predict_proba(feature_vector_2d)[0]
     
     return predicted_class, probabilities
 
@@ -1226,8 +1476,8 @@ async def predict_stock(
         # 3. Run inference
         nn_prediction = None
         rf_prediction = None
-        nn_available = _neural_network_model is not None
-        rf_available = _random_forest_model is not None
+        nn_available = _get_neural_network_model() is not None
+        rf_available = _get_random_forest_model() is not None
         
         if not nn_available and not rf_available:
             raise ModelNotLoadedError("No models loaded. Call initialize_models() at startup.")
@@ -1237,8 +1487,9 @@ async def predict_stock(
             try:
                 nn_class, nn_probs = _infer_neural_network(feature_vector)
                 nn_signal = _class_to_signal(nn_class)
+                nn_metadata = _get_neural_network_metadata() or {}
                 nn_confidence = _calculate_confidence_score(
-                    _neural_network_metadata or {},
+                    nn_metadata,
                     float(np.max(nn_probs)),
                     "neural_network",
                 )
@@ -1259,8 +1510,9 @@ async def predict_stock(
             try:
                 rf_class, rf_probs = _infer_random_forest(feature_vector)
                 rf_signal = _class_to_signal(rf_class)
+                rf_metadata = _get_random_forest_metadata() or {}
                 rf_confidence = _calculate_confidence_score(
-                    _random_forest_metadata or {},
+                    rf_metadata,
                     float(np.max(rf_probs)),
                     "random_forest",
                 )

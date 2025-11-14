@@ -57,7 +57,7 @@ development_status:
   2-8-recommendation-generation-logic: done
   epic-2-retrospective: optional
 
-  epic-3: backlog
+  epic-3: done
   3-1-recommendation-dashboard-list-view: done
   3-2-recommendation-detail-view: done
   3-3-stock-search-functionality: done
@@ -69,13 +69,13 @@ development_status:
   3-9-responsive-mobile-optimization: done
   epic-3-retrospective: optional
 
-  epic-4: backlog
-  4-1-unified-data-collection-service-with-yfinance-integration: backlog
-  4-2-fix-yfinance-async-execution-issues: backlog
-  4-3-automated-model-training-pipeline: backlog
-  4-4-model-training-api-endpoint: backlog
-  4-5-data-collection-error-handling-retry-logic: backlog
-  4-6-data-collection-performance-optimization: backlog
+  epic-4: contexted
+  4-1-ml-model-loading-verification-diagnostics: done
+  4-2-recommendation-generation-error-handling-diagnostics: backlog
+  4-3-fix-recommendation-filtering-logic: backlog
+  4-4-sentiment-data-verification-collection-fixes: backlog
+  4-5-end-to-end-recommendation-generation-testing: backlog
+  4-6-recommendation-generation-performance-reliability: backlog
   epic-4-retrospective: optional
 
   epic-5: backlog

@@ -42,7 +42,7 @@ class Recommendation(Base):
     explanation = Column(Text, nullable=True)
     created_at = Column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
+        default=datetime.utcnow,
         nullable=False,
         index=True
     )
